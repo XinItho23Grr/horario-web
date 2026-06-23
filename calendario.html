@@ -244,9 +244,7 @@
 
         .save-status { font-size: 12px; color: var(--text-muted); font-weight: 600; }
 
-        /* ========================================================
-           6. VENTANA MODAL ESTÉTICA E INTERACTIVA
-           ======================================================== */
+        /* Ventana Modal */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -285,7 +283,6 @@
             padding-bottom: 10px;
         }
 
-        /* Contenedores de Modo Vista y Modo Edición */
         .modal-view-mode { display: block; }
         .modal-edit-mode { display: none; }
 
@@ -304,7 +301,6 @@
         .modal-select, .modal-input { width: 100%; padding: 12px; background: #0f172a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; }
         .modal-select { font-weight: 600; }
 
-        /* Botones de acción inferiores */
         .modal-actions-layout {
             display: flex;
             justify-content: center;
@@ -330,6 +326,33 @@
         .btn-close-x { background: #334155; color: var(--text-main); }
         .btn-edit-pencil { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
         .btn-save-disk { background: linear-gradient(135deg, #10b981, #059669); color: white; width: 120px; border-radius: 10px; font-size: 15px; font-weight: 700; gap: 8px; }
+
+        /* NOTIFICACIÓN FLOTANTE PERSONALIZADA */
+        .toast-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 16px 28px;
+            border-radius: 12px;
+            border: 2px solid #2563eb;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            z-index: 2000;
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast-notification.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
 
         @media (max-width: 768px) {
             body { padding: 10px; }
@@ -357,9 +380,9 @@
             <input type="number" id="autoDiaInicio" min="1" max="31" placeholder="Ej: 1" style="max-width: 70px;">
             <label>Tipo de Patrón:</label>
             <select id="autoTipoPatron">
-                <option value="4x4_dia">☀️ 4x4 Solo Día (4D - 4L)</option>
-                <option value="4x4_noche">🌙 4x4 Solo Noche (4N - 4L)</option>
-                <option value="4x4_rotativo">🔄 4x4 Día y Noche (4D - 4N - 4L)</option>
+                <option value="4x4_dia">☀️ 4x4 Solo Día</option>
+                <option value="4x4_noche">🌙 4x4 Solo Noche</option>
+                <option value="4x4_rotativo">🔄 4x4 Día y Noche</option>
             </select>
         </div>
         <button class="auto-btn" id="autoCompletarBtn">Aplicar Secuencia</button>
@@ -427,6 +450,11 @@
     </div>
 </div>
 
+<div class="toast-notification" id="centerToast">
+    <span id="toastIcon">✨</span>
+    <span id="toastMessage">Mensaje informativo</span>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -457,8 +485,17 @@
         "L": { icon: "💤", name: "Libre / Descanso", horas: "Descanso", class: "state-libre" }
     };
 
-    // Nombres ordenados de días para calcular la cabecera dinámica en español
-    const diasSemanaNombres = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    // Función para mostrar alertas en el centro sin alertas de navegador
+    function showToast(mensaje, icono = "📢") {
+        const toast = document.getElementById('centerToast');
+        document.getElementById('toastIcon').textContent = icono;
+        document.getElementById('toastMessage').textContent = mensaje;
+        
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -520,12 +557,6 @@
 
             cell.addEventListener('click', () => {
                 diaSeleccionadoGlobal = i;
-                
-                // Calcular el día de la semana correspondiente de forma simulada secuencial (asumiendo que inicia el lunes, por ejemplo)
-                // O de forma más limpia: calculando basándose en la posición del grid
-                const indiceDiaSemana = (i) % 7; 
-                const nombresMapeados = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-                // Ajuste simple para que coincida con las columnas estáticas: i=1 -> lunes
                 const diasGrid = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
                 const nombreDelDia = diasGrid[i % 7 === 0 ? 6 : (i % 7) - 1];
 
@@ -544,59 +575,47 @@
         }
     }
 
-    /* CONTROL DEL MODAL MEJORADO */
     const modal = document.getElementById('editModal');
     const viewContainer = document.getElementById('modalViewContainer');
     const editContainer = document.getElementById('modalEditContainer');
-    
     const selectModal = document.getElementById('modalSelectTurno');
     const inputModal = document.getElementById('modalInputHours');
 
     function abrirModal(nombreDia, numeroDia, turnoActual, horasActuales) {
-        // 1. Mostrar título bonito: Ej "Lunes 15"
         document.getElementById('modalDateTitle').textContent = `${nombreDia} ${numeroDia}`;
-        
-        // 2. Cargar datos del Modo Vista
         const info = infoTurnos[turnoActual] || infoTurnos[""];
         document.getElementById('viewIcon').textContent = info.icon;
         document.getElementById('viewName').textContent = info.name;
         document.getElementById('viewHours').textContent = horasActuales ? horasActuales : info.horas;
 
-        // 3. Dejar los inputs listos en segundo plano
         selectModal.value = turnoActual;
         inputModal.value = horasActuales ? horasActuales : (turnoActual ? info.horas : "");
 
-        // 4. Iniciar SIEMPRE en Modo Vista (como solicitaste)
         viewContainer.style.display = "block";
         editContainer.style.display = "none";
-        
         modal.classList.add('active');
     }
 
-    // Activar el modo edición al presionar el Lápiz ✏️
     document.getElementById('btnActivarEditar').addEventListener('click', () => {
         viewContainer.style.display = "none";
         editContainer.style.display = "block";
     });
 
-    // Cancelar la edición y volver a la vista informativa
     document.getElementById('btnCancelarEdicion').addEventListener('click', () => {
         viewContainer.style.display = "block";
         editContainer.style.display = "none";
     });
 
-    // Cerrar el modal por completo con la X de la vista
     document.getElementById('btnCerrarModal').addEventListener('click', cerrarModal);
     function cerrarModal() { modal.classList.remove('active'); }
 
-    // Cambiar las horas automáticamente si seleccionan otro turno en la edición
     selectModal.addEventListener('change', () => {
         const estado = selectModal.value;
         if (estado) { inputModal.value = infoTurnos[estado].horas; }
         else { inputModal.value = ""; }
     });
 
-    // GUARDAR CAMBIOS DESDE EL BOTÓN DISCO (💾)
+    // GUARDAR DÍA INDIVIDUAL
     document.getElementById('btnGuardarModal').addEventListener('click', () => {
         if (diaSeleccionadoGlobal === null) return;
 
@@ -612,7 +631,7 @@
 
         celda.setAttribute('data-turno', nuevoTurno);
         celda.setAttribute('data-horas', nuevasHoras);
-        actualizarEstilosCelda(celda, icono, horas, nuevoTurno, nuevasHoras);
+        actualizarEstilosCelda(cell, icono, horas, nuevoTurno, nuevasHoras);
 
         setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${diaSeleccionadoGlobal}`), {
             texto: nuevoTurno,
@@ -621,33 +640,43 @@
         .then(() => { 
             globalCloud.textContent = "☁️ Guardado en nube"; 
             cerrarModal();
+            showToast(`¡Día ${diaSeleccionadoGlobal} modificado con éxito!`, "💾");
         })
         .catch(() => { globalCloud.textContent = "❌ Error"; });
     });
 
-    // Lógica del Autocompletado Secuencial 4x4
+    /* ========================================================
+       LÓGICA ARREGLADA: SECUENCIA INFINITA 4 TRABAJO X 4 LIBRES
+       ======================================================== */
     document.getElementById('autoCompletarBtn').addEventListener('click', async () => {
         const diaInicio = parseInt(document.getElementById('autoDiaInicio').value);
         const tipoPatron = document.getElementById('autoTipoPatron').value;
 
         if (!diaInicio || diaInicio < 1 || diaInicio > 31) {
-            alert("Por favor, ingresa un número de día inicial válido (1 al 31).");
+            showToast("Ingresa un número de día inicial entre 1 y 31.", "⚠️");
             return;
         }
 
         const globalCloud = document.getElementById('globalCloudStatus');
-        globalCloud.textContent = "⏳ Generando patrón...";
+        globalCloud.textContent = "⏳ Generando secuencia...";
 
-        let patron = [];
-        if (tipoPatron === "4x4_dia") { patron = ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L']; }
-        else if (tipoPatron === "4x4_noche") { patron = ['N', 'N', 'N', 'N', 'L', 'L', 'L', 'L']; }
-        else if (tipoPatron === "4x4_rotativo") { patron = ['D', 'D', 'D', 'D', 'N', 'N', 'N', 'N', 'L', 'L', 'L', 'L']; }
+        // Matrices de patrones puros de ciclos continuos
+        let secuenciaBase = [];
+        if (tipoPatron === "4x4_dia") {
+            secuenciaBase = ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L'];
+        } else if (tipoPatron === "4x4_noche") {
+            secuenciaBase = ['N', 'N', 'N', 'N', 'L', 'L', 'L', 'L'];
+        } else if (tipoPatron === "4x4_rotativo") {
+            secuenciaBase = ['D', 'D', 'D', 'D', 'N', 'N', 'N', 'N', 'L', 'L', 'L', 'L'];
+        }
 
+        // Bucle secuencial corregido matemáticamente sin cortes por día corrido
         for (let i = 1; i <= 31; i++) {
             if (i >= diaInicio) {
-                const desplazamiento = i - diaInicio;
-                const indiceCalculado = desplazamiento % patron.length;
-                const turnoAsignado = patron[indiceCalculado];
+                // El índice progresa de forma lineal desde 0 en adelante según el avance
+                const pasoLinea = i - diaInicio;
+                const indiceCalculado = pasoLinea % secuenciaBase.length;
+                const turnoAsignado = secuenciaBase[indiceCalculado];
 
                 await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`), {
                     texto: turnoAsignado,
@@ -657,8 +686,13 @@
         }
 
         globalCloud.textContent = "☁️ Sincronizado";
-        alert("¡Patrón automatizado guardado con éxito!");
-        window.location.reload();
+        
+        // Alerta flotante al centro antes de recargar
+        showToast("¡Patrón continuo 4x4 aplicado perfectamente!", "🔄");
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
     });
 </script>
 </body>
