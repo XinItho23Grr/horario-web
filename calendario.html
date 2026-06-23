@@ -38,7 +38,7 @@
         <div class="day-header">Vie</div>
         <div class="day-header">Sáb</div>
         <div class="day-header">Dom</div>
-        </div>
+    </div>
 </div>
 
 <script type="module">
@@ -47,7 +47,7 @@
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBCu4ytuNDZa5MrNgZ2Vlb20Mh6xeBCMqk",
+      apiKey: "AIzaSyBCu4ytuNDza5MrNGz2Vlb20Mh6xeBCMqk",
       authDomain: "calendario-4x4-f66d7.firebaseapp.com",
       projectId: "calendario-4x4-f66d7",
       storageBucket: "calendario-4x4-f66d7.firebasestorage.app",
@@ -62,7 +62,6 @@
 
     let currentUser = null;
 
-    // Verificar si el usuario está logueado
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
@@ -73,12 +72,10 @@
         }
     });
 
-    // Cerrar sesión
     document.getElementById('logoutBtn').addEventListener('click', () => {
         signOut(auth).then(() => { window.location.href = "index.html"; });
     });
 
-    // Generar los 31 días y cargar/guardar datos
     function generarCalendario() {
         const grid = document.getElementById('calendarGrid');
         
@@ -104,7 +101,6 @@
             cell.appendChild(status);
             grid.appendChild(cell);
 
-            // Cargar datos guardados desde Firestore
             const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`);
             getDoc(docRef).then((docSnap) => {
                 if (docSnap.exists()) {
@@ -113,7 +109,6 @@
                 }
             });
 
-            // Guardar automáticamente al dejar de escribir
             textarea.addEventListener('blur', () => {
                 status.textContent = "Guardando...";
                 setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`), {

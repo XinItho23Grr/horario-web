@@ -52,7 +52,7 @@
     import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBCu4ytuNDZa5MrNgZ2Vlb20Mh6xeBCMqk",
+      apiKey: "AIzaSyBCu4ytuNDza5MrNGz2Vlb20Mh6xeBCMqk",
       authDomain: "calendario-4x4-f66d7.firebaseapp.com",
       projectId: "calendario-4x4-f66d7",
       storageBucket: "calendario-4x4-f66d7.firebasestorage.app",
@@ -64,7 +64,6 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Mostrar/ocultar contraseña
     const passwordInput = document.getElementById('password');
     const togglePasswordBtn = document.getElementById('togglePassword');
     togglePasswordBtn.addEventListener('click', () => {
@@ -73,7 +72,6 @@
         togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
     });
 
-    // Lógica del Registro
     document.getElementById('registerForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const nombre = document.getElementById('nombre').value;
@@ -82,7 +80,6 @@
 
         createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                // Guardar el nombre en el perfil del usuario
                 updateProfile(userCredential.user, {
                     displayName: nombre
                 }).then(() => {

@@ -48,7 +48,7 @@
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBCu4ytuNDZa5MrNgZ2Vlb20Mh6xeBCMqk",
+      apiKey: "AIzaSyBCu4ytuNDza5MrNGz2Vlb20Mh6xeBCMqk",
       authDomain: "calendario-4x4-f66d7.firebaseapp.com",
       projectId: "calendario-4x4-f66d7",
       storageBucket: "calendario-4x4-f66d7.firebasestorage.app",
@@ -60,7 +60,6 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Lógica para ver/ocultar contraseña
     const passwordInput = document.getElementById('password');
     const togglePasswordBtn = document.getElementById('togglePassword');
     togglePasswordBtn.addEventListener('click', () => {
@@ -69,14 +68,13 @@
         togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
     });
 
-    // Lógica del Login
     document.getElementById('loginForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
 
         signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
+            .then(() => {
                 window.location.href = "calendario.html";
             })
             .catch((error) => {
