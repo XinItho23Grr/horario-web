@@ -5,31 +5,420 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Horario Web - Gestión de Turnos Profesional</title>
     <style>
-        /* ESTILOS DE DISEÑO PROFESIONAL */
-        :root { --bg-main: #090d16; --bg-surface: #131c2e; --bg-surface-hover: #1b273f; --text-primary: #f8fafc; --text-secondary: #94a3b8; --border-subtle: #22314d; --accent-primary: #3b82f6; --color-dia: #eab308; --color-noche: #3b82f6; --color-extra: #10b981; --color-libre: #475569; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-primary); min-height: 100vh; display: flex; justify-content: center; padding: 24px; }
-        .main-container { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 24px; }
-        header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); padding: 18px 28px; border-radius: 14px; border: 1px solid var(--border-subtle); }
-        h1 { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .auto-panel { background: var(--bg-surface); padding: 20px 28px; border-radius: 14px; border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; gap: 24px; }
-        .calendar-wrapper { background: var(--bg-surface); border-radius: 16px; border: 1px solid var(--border-subtle); overflow: hidden; }
-        .calendar-header-nav { padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border-subtle); padding: 1px; }
-        .weekday { text-transform: uppercase; font-size: 11px; font-weight: 700; text-align: center; color: var(--text-secondary); background: var(--bg-surface); padding: 14px 0; }
-        .day-cell { background: var(--bg-surface); min-height: 120px; padding: 14px; display: flex; flex-direction: column; cursor: pointer; transition: background-color 0.2s; }
-        .day-cell:hover { background-color: var(--bg-surface-hover); }
-        .day-number { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
-        .center-space { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+        /* 1. Variables de Diseño Corporativo (Slate Theme) */
+        :root {
+            --bg-main: #090d16;
+            --bg-surface: #131c2e;
+            --bg-surface-hover: #1b273f;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-subtle: #22314d;
+            --accent-primary: #3b82f6;
+            
+            /* Colores de turnos sofisticados */
+            --color-dia: #eab308;
+            --color-noche: #3b82f6;
+            --color-extra: #10b981;
+            --color-libre: #475569;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        }
+
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--text-primary);
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            padding: 24px; 
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Cabecera Principal */
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--bg-surface); 
+            padding: 18px 28px; 
+            border-radius: 14px; 
+            border: 1px solid var(--border-subtle);
+        }
+
+        h1 { 
+            font-size: 22px; 
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logout-btn { 
+            padding: 8px 16px; 
+            background: rgba(239, 68, 68, 0.1); 
+            color: #f87171; 
+            border: 1px solid rgba(239, 68, 68, 0.2); 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover { background: #ef4444; color: white; }
+
+        /* Panel de Automatización Premium */
+        .auto-panel { 
+            background: var(--bg-surface); 
+            padding: 20px 28px; 
+            border-radius: 14px; 
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .panel-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-grow: 1;
+        }
+
+        .panel-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .auto-panel input[type="date"], .auto-panel select {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            padding: 10px 14px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: border 0.2s;
+        }
+        .auto-panel input[type="date"]:focus, .auto-panel select:focus {
+            border-color: var(--accent-primary);
+        }
+
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
+        }
+
+        .auto-btn {
+            padding: 11px 22px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .auto-btn:hover { opacity: 0.9; }
+
+        /* Contenedor del Calendario Operativo */
+        .calendar-wrapper {
+            background: var(--bg-surface);
+            border-radius: 16px;
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+        }
+
+        .calendar-header-nav {
+            padding: 24px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .calendar-header-nav h2 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-transform: capitalize;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-main);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .nav-btn:hover { background: var(--bg-surface-hover); }
+
+        /* Leyendas */
+        .leyenda {
+            padding: 14px 28px;
+            display: flex;
+            gap: 24px;
+            background: rgba(15, 23, 42, 0.3);
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .leyenda-item { display: flex; align-items: center; gap: 8px; }
+        .box { width: 12px; height: 12px; border-radius: 3px; }
+        .box.dia { background-color: var(--color-dia); }
+        .box.noche { background-color: var(--color-noche); }
+        .box.extra { background-color: var(--color-extra); }
+        .box.libre { background-color: var(--color-libre); }
+
+        /* Cuadrícula Grid */
+        .calendar-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 1px; 
+            background: var(--border-subtle);
+            padding: 1px;
+        }
+
+        .weekday { 
+            text-transform: uppercase; 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-align: center; 
+            color: var(--text-secondary); 
+            background: var(--bg-surface);
+            padding: 14px 0;
+            letter-spacing: 0.5px;
+        }
+
+        /* Celdas del Calendario */
+        .day-cell { 
+            background: var(--bg-surface); 
+            min-height: 120px; 
+            padding: 14px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .day-cell:hover {
+            background-color: var(--bg-surface-hover);
+        }
+        
+        .day-cell.empty-cell {
+            background: rgba(9, 13, 22, 0.4);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .day-number { 
+            font-size: 14px; 
+            font-weight: 600; 
+            color: var(--text-secondary);
+        }
+
+        .center-space {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+
         .turno-icon { font-size: 24px; }
-        .turno-hours { font-size: 11px; font-weight: 600; color: var(--text-secondary); opacity: 0.85; }
-        .state-dia { background-color: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.2); }
-        .state-noche { background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
-        .state-libre { background-color: rgba(71, 85, 105, 0.1); }
-        .btn-danger-outline { background: rgba(239, 68, 68, 0.05); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 10px; }
-        .modal-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--bg-surface); padding: 28px; border-radius: 20px; width: 350px; text-align: center; }
+        .turno-hours { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-align: center; opacity: 0.85; }
+
+        /* Estados de Turnos */
+        .day-cell.state-dia { background-color: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); }
+        .day-cell.state-dia .day-number { color: var(--color-dia); }
+        .day-cell.state-dia .turno-hours { color: var(--color-dia); }
+
+        .day-cell.state-noche { background-color: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .day-cell.state-noche .day-number { color: var(--color-noche); }
+        .day-cell.state-noche .turno-hours { color: var(--color-noche); }
+
+        .day-cell.state-extra { background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .day-cell.state-extra .day-number { color: var(--color-extra); }
+        .day-cell.state-extra .turno-hours { color: var(--color-extra); }
+
+        .day-cell.state-libre { background-color: rgba(71, 85, 105, 0.2); border: 1px solid rgba(71, 85, 105, 0.3); }
+        .day-cell.state-libre .day-number { color: var(--text-secondary); }
+        .day-cell.state-libre .turno-hours { color: var(--text-secondary); }
+
+        .save-status { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+
+        /* Botón de Acción Inferior */
+        .bottom-actions-zone {
+            display: flex;
+            justify-content: flex-end;
+            padding: 4px 0;
+        }
+
+        .btn-danger-outline {
+            background: rgba(239, 68, 68, 0.05);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn-danger-outline:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #ef4444;
+            transform: translateY(-1px);
+        }
+
+        /* Ventana Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 8, 15, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            width: 90%;
+            max-width: 380px;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.7);
+            transform: scale(0.96);
+            transition: transform 0.2s ease;
+            text-align: center;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        .modal-date-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: capitalize;
+            margin-bottom: 24px;
+            letter-spacing: -0.3px;
+        }
+
+        .modal-view-mode { display: block; }
+        .modal-edit-mode { display: none; }
+
+        .info-display-box {
+            background: var(--bg-main);
+            padding: 24px;
+            border-radius: 14px;
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 28px;
+        }
+        .info-display-icon { font-size: 44px; margin-bottom: 12px; }
+        .info-display-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .info-display-hours { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+        .form-label { display: block; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; margin-top: 16px; }
+        .modal-select, .modal-input { width: 100%; padding: 12px; background: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-subtle); border-radius: 10px; font-size: 14px; outline: none; }
+        
+        .modal-actions-layout {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .circle-action-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .circle-action-btn:hover { transform: translateY(-2px); }
+        
+        .btn-close-x { background: #1e293b; color: white; }
+        .btn-edit-pencil { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: white; }
+        .btn-save-disk { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); }
+
+        /* NOTIFICACIÓN PREMIUM CENTRAL */
+        .toast-notification {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            padding: 16px 32px;
+            border-radius: 14px;
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            z-index: 2000;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+        .toast-notification.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .auto-panel { flex-direction: column; align-items: stretch; gap: 14px; }
+            .panel-group { flex-direction: column; align-items: stretch; gap: 8px; }
+            .auto-btn { width: 100%; text-align: center; }
+            .day-cell { min-height: 100px; padding: 8px; }
+            .bottom-actions-zone { justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -42,12 +431,15 @@
     </header>
 
     <div class="auto-panel">
-        <div>
+        <div class="panel-group">
+            <label>Fecha de Inicio:</label>
             <input type="date" id="autoFechaInicio">
+            
+            <label>Patrón Secuencial:</label>
             <select id="autoTipoPatron">
-                <option value="4x4_dia">☀️ 4x4 Día</option>
-                <option value="4x4_noche">🌙 4x4 Noche</option>
-                <option value="4x4_rotativo">🔄 4x4 Rotativo</option>
+                <option value="4x4_dia">☀️ 4x4 Solo Día</option>
+                <option value="4x4_noche">🌙 4x4 Solo Noche</option>
+                <option value="4x4_rotativo">🔄 4x4 Día y Noche</option>
             </select>
         </div>
         <button class="auto-btn" id="autoCompletarBtn">Aplicar Secuencia</button>
@@ -56,71 +448,388 @@
     <div class="calendar-wrapper">
         <div class="calendar-header-nav">
             <h2 id="monthYearTitle">Mes Año</h2>
-            <div><button id="btnPrevMonth">‹</button><button id="btnNextMonth">›</button></div>
+            <div class="nav-buttons">
+                <button class="nav-btn" id="btnPrevMonth">‹</button>
+                <button class="nav-btn" id="btnNextMonth">›</button>
+            </div>
         </div>
+
+        <div class="leyenda">
+            <div class="leyenda-item"><div class="box dia"></div> <span>Día</span></div>
+            <div class="leyenda-item"><div class="box noche"></div> <span>Noche</span></div>
+            <div class="leyenda-item"><div class="box extra"></div> <span>Extra</span></div>
+            <div class="leyenda-item"><div class="box libre"></div> <span>Libre</span></div>
+        </div>
+
         <div class="calendar-grid" id="calendarGrid">
-            <div class="weekday">Lun</div><div class="weekday">Mar</div><div class="weekday">Mié</div>
-            <div class="weekday">Jue</div><div class="weekday">Vie</div><div class="weekday">Sáb</div>
+            <div class="weekday">Lun</div>
+            <div class="weekday">Mar</div>
+            <div class="weekday">Mié</div>
+            <div class="weekday">Jue</div>
+            <div class="weekday">Vie</div>
+            <div class="weekday">Sáb</div>
             <div class="weekday">Dom</div>
         </div>
     </div>
-    <button class="btn-danger-outline" id="btnEliminarTodo">🗑️</button>
+
+    <div class="bottom-actions-zone">
+        <button class="btn-danger-outline" id="btnEliminarTodo">🗑️ Eliminar Horario Completo</button>
+    </div>
 </div>
 
 <div class="modal-overlay" id="editModal">
     <div class="modal-content">
-        <h3 id="modalDateTitle">Seleccionar</h3>
-        <select id="modalSelectTurno">
-            <option value="D">☀️ Día</option>
-            <option value="N">🌙 Noche</option>
-            <option value="E">⏰ Extra</option>
-            <option value="L">💤 Libre</option>
-        </select>
-        <button id="btnGuardarModal">💾</button>
-        <button id="btnCerrarModal">❌</button>
+        <div class="modal-date-title" id="modalDateTitle">Fecha</div>
+        
+        <div class="modal-view-mode" id="modalViewContainer">
+            <div class="info-display-box">
+                <div class="info-display-icon" id="viewIcon"></div>
+                <div class="info-display-name" id="viewName">Sin Asignar</div>
+                <div class="info-display-hours" id="viewHours">--:--</div>
+            </div>
+            
+            <div class="modal-actions-layout">
+                <button class="circle-action-btn btn-close-x" id="btnCerrarModal">❌</button>
+                <button class="circle-action-btn btn-edit-pencil" id="btnActivarEditar">✏️</button>
+            </div>
+        </div>
+
+        <div class="modal-edit-mode" id="modalEditContainer">
+            <label class="form-label">Tipo de Turno</label>
+            <select class="modal-select" id="modalSelectTurno">
+                <option value="">Sin Asignar</option>
+                <option value="D">☀️ Día</option>
+                <option value="N">🌙 Noche</option>
+                <option value="E">⏰ Extra</option>
+                <option value="L">💤 Libre</option>
+            </select>
+
+            <label class="form-label">Horario Operativo</label>
+            <input type="text" class="modal-input" id="modalInputHours" placeholder="Ej: 08:00 - 20:00">
+
+            <div class="modal-actions-layout" style="margin-top: 28px;">
+                <button class="circle-action-btn btn-close-x" id="btnCancelarEdicion">❌</button>
+                <button class="circle-action-btn btn-save-disk" id="btnGuardarModal">💾</button>
+            </div>
+        </div>
     </div>
+</div>
+
+<div class="toast-notification" id="centerToast">
+    <span id="toastIcon">✨</span>
+    <span id="toastMessage">Sincronizando...</span>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDocs, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = { /* TU CONFIG */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCu4ytuNDza5MrNGz2Vlb20Mh6xeBCMqk", 
+      authDomain: "calendario-4x4-f66d7.firebaseapp.com",
+      projectId: "calendario-4x4-f66d7",
+      storageBucket: "calendario-4x4-f66d7.firebasestorage.app",
+      messagingSenderId: "441544580100",
+      appId: "1:441544580100:web:7afd53b9933afdf9c36951",
+      measurementId: "G-908HDX2J47"
+    };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    let currentUser, currentDate = new Date(), fechaSeleccionada;
 
-    // --- LÓGICA DE BORRADO MASIVO ---
-    document.getElementById('btnEliminarTodo').addEventListener('click', async () => {
-        if(!confirm("¿Borrar todo el historial de turnos?")) return;
-        const docs = await getDocs(collection(db, "usuarios_4x4", currentUser.uid, "turnos"));
-        docs.forEach(d => deleteDoc(d.ref));
-        alert("Horario eliminado");
-        location.reload();
-    });
+    let currentUser = null;
+    let currentDate = new Date(); 
+    let fechaSeleccionadaGlobal = null; 
 
-    // --- LÓGICA DE AUTOCOMPLETADO ---
-    document.getElementById('autoCompletarBtn').addEventListener('click', async () => {
-        const fechaBase = new Date(document.getElementById('autoFechaInicio').value + "T00:00:00");
-        const tipo = document.getElementById('autoTipoPatron').value;
-        const patrones = {
-            '4x4_dia': ['D','D','D','D','L','L','L','L'],
-            '4x4_noche': ['N','N','N','N','L','L','L','L'],
-            '4x4_rotativo': ['D','D','D','D','L','L','L','L','N','N','N','N']
-        };
-        const seq = patrones[tipo];
-        for(let i=0; i<180; i++) {
-            let f = new Date(fechaBase); f.setDate(f.getDate() + i);
-            let id = f.toISOString().split('T')[0];
-            await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", id), { texto: seq[i % seq.length] });
+    const infoTurnos = {
+        "":  { icon: "", name: "Sin Asignar", horas: "", class: "" },
+        "D": { icon: "☀️", name: "Turno Día", horas: "08:00 - 20:00", class: "state-dia" },
+        "N": { icon: "🌙", name: "Turno Noche", horas: "20:00 - 08:00", class: "state-noche" },
+        "E": { icon: "⏰", name: "Turno Extra", horas: "Turno Extra", class: "state-extra" },
+        "L": { icon: "💤", name: "Libre / Descanso", horas: "Descanso", class: "state-libre" }
+    };
+
+    function showToast(mensaje, icono = "📢") {
+        const toast = document.getElementById('centerToast');
+        document.getElementById('toastIcon').textContent = icono;
+        document.getElementById('toastMessage').textContent = mensaje;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('welcomeMessage').textContent = `👋 ${user.displayName || 'Operador'}`;
+            document.getElementById('autoFechaInicio').value = new Date().toISOString().split('T')[0];
+            renderCalendarioCompleto();
+        } else {
+            window.location.href = "index.html";
         }
-        location.reload();
     });
 
-    // ... [Aquí iría tu función renderCalendarioCompleto y listeners de eventos] ...
-    onAuthStateChanged(auth, user => { if(user) currentUser = user; });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        signOut(auth).then(() => { window.location.href = "index.html"; });
+    });
+
+    document.getElementById('btnPrevMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendarioCompleto();
+    });
+
+    document.getElementById('btnNextMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendarioCompleto();
+    });
+
+    function renderCalendarioCompleto() {
+        const grid = document.getElementById('calendarGrid');
+        const weekdaysCount = 7;
+        while (grid.children.length > weekdaysCount) {
+            grid.removeChild(grid.lastChild);
+        }
+
+        const año = currentDate.getFullYear();
+        const mes = currentDate.getMonth();
+
+        const opcionesMes = { month: 'long', year: 'numeric' };
+        document.getElementById('monthYearTitle').textContent = currentDate.toLocaleDateString('es-ES', opcionesMes);
+
+        const primerDiaMes = new Date(año, mes, 1);
+        const totalDiasMes = new Date(año, mes + 1, 0).getDate();
+
+        let diaSemanaInicial = primerDiaMes.getDay();
+        let celdasVaciasAlInicio = diaSemanaInicial === 0 ? 6 : diaSemanaInicial - 1;
+
+        for (let e = 0; e < celdasVaciasAlInicio; e++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'day-cell empty-cell';
+            grid.appendChild(emptyCell);
+        }
+
+        for (let i = 1; i <= totalDiasMes; i++) {
+            const mesFormateado = String(mes + 1).padStart(2, '0');
+            const diaFormateado = String(i).padStart(2, '0');
+            const stringFechaClave = `${año}-${mesFormateado}-${diaFormateado}`;
+
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            cell.id = `cell-${stringFechaClave}`;
+            
+            const number = document.createElement('div');
+            number.className = 'day-number';
+            number.textContent = i;
+            
+            const centerSpace = document.createElement('div');
+            centerSpace.className = 'center-space';
+            
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'turno-icon';
+            iconSpan.id = `icon-${stringFechaClave}`;
+            iconSpan.textContent = ""; 
+            
+            const hoursSpan = document.createElement('span');
+            hoursSpan.className = 'turno-hours';
+            hoursSpan.id = `hours-${stringFechaClave}`;
+            hoursSpan.textContent = ""; 
+            
+            centerSpace.appendChild(iconSpan);
+            centerSpace.appendChild(hoursSpan);
+            cell.appendChild(number);
+            cell.appendChild(centerSpace);
+            grid.appendChild(cell);
+
+            const fechaObjeto = new Date(año, mes, i);
+            const nombreDiaSemana = fechaObjeto.toLocaleDateString('es-ES', { weekday: 'long' });
+
+            const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
+            getDoc(docRef).then((docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const valorTurno = data.texto || "";
+                    const horasCustom = data.horasCustom || "";
+                    cell.setAttribute('data-turno', valorTurno);
+                    cell.setAttribute('data-horas', horasCustom);
+                    actualizarEstilosCelda(cell, iconSpan, hoursSpan, valorTurno, horasCustom);
+                }
+            }).catch(err => console.error("Error cargando día:", err));
+
+            cell.addEventListener('click', () => {
+                fechaSeleccionadaGlobal = stringFechaClave;
+                abrirModal(nombreDiaSemana, i, cell.getAttribute('data-turno') || "", cell.getAttribute('data-horas') || "");
+            });
+        }
+    }
+
+    function actualizarEstilosCelda(celda, icono, horas, estado, horasCustom) {
+        celda.classList.remove('state-dia', 'state-noche', 'state-extra', 'state-libre');
+        const info = infoTurnos[estado] || infoTurnos[""];
+        icono.textContent = info.icon;
+        horas.textContent = horasCustom ? horasCustom : info.horas;
+        if (info.class) { celda.classList.add(info.class); }
+    }
+
+    const modal = document.getElementById('editModal');
+    const viewContainer = document.getElementById('modalViewContainer');
+    const editContainer = document.getElementById('modalEditContainer');
+    const selectModal = document.getElementById('modalSelectTurno');
+    const inputModal = document.getElementById('modalInputHours');
+
+    function abrirModal(nombreDia, numeroDia, turnoActual, horasActuales) {
+        document.getElementById('modalDateTitle').textContent = `${nombreDia} ${numeroDia}`;
+        const info = infoTurnos[turnoActual] || infoTurnos[""];
+        
+        document.getElementById('viewIcon').textContent = turnoActual ? info.icon : "❓";
+        document.getElementById('viewName').textContent = info.name;
+        document.getElementById('viewHours').textContent = horasActuales ? horasActuales : (turnoActual ? info.horas : "--:--");
+
+        selectModal.value = turnoActual;
+        inputModal.value = horasActuales ? horasActuales : (turnoActual ? info.horas : "");
+
+        viewContainer.style.display = "block";
+        editContainer.style.display = "none";
+        modal.classList.add('active');
+    }
+
+    document.getElementById('btnActivarEditar').addEventListener('click', () => {
+        viewContainer.style.display = "none";
+        editContainer.style.display = "block";
+    });
+
+    document.getElementById('btnCancelarEdicion').addEventListener('click', () => {
+        viewContainer.style.display = "block";
+        editContainer.style.display = "none";
+    });
+
+    document.getElementById('btnCerrarModal').addEventListener('click', cerrarModal);
+    function cerrarModal() { modal.classList.remove('active'); }
+
+    selectModal.addEventListener('change', () => {
+        const estado = selectModal.value;
+        if (estado) { inputModal.value = infoTurnos[estado].horas; }
+        else { inputModal.value = ""; }
+    });
+
+    document.getElementById('btnGuardarModal').addEventListener('click', () => {
+        if (!fechaSeleccionadaGlobal) return;
+
+        const globalCloud = document.getElementById('globalCloudStatus');
+        globalCloud.textContent = "⏳ Guardando...";
+
+        const nuevoTurno = selectModal.value;
+        const nuevasHoras = inputModal.value;
+
+        const celda = document.getElementById(`cell-${fechaSeleccionadaGlobal}`);
+        
+        if (celda) {
+            const icono = document.getElementById(`icon-${fechaSeleccionadaGlobal}`);
+            const horas = document.getElementById(`hours-${fechaSeleccionadaGlobal}`);
+            celda.setAttribute('data-turno', nuevoTurno);
+            celda.setAttribute('data-horas', nuevasHoras);
+            actualizarEstilosCelda(celda, icono, horas, nuevoTurno, nuevasHoras);
+        }
+
+        setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", fechaSeleccionadaGlobal), {
+            texto: nuevoTurno,
+            horasCustom: nuevasHoras
+        })
+        .then(() => { 
+            globalCloud.textContent = "☁️ Sincronizado"; 
+            cerrarModal();
+            showToast("Turno guardado con éxito.", "💾");
+        })
+        .catch((err) => { 
+            console.error(err);
+            globalCloud.textContent = "❌ Error"; 
+        });
+    });
+
+    /* AUTOPLANIFICACIÓN CONTINUA A FUTURO (180 DÍAS) */
+    document.getElementById('autoCompletarBtn').addEventListener('click', async () => {
+        const fechaStringInput = document.getElementById('autoFechaInicio').value;
+        const tipoPatron = document.getElementById('autoTipoPatron').value;
+
+        if (!fechaStringInput) {
+            showToast("Por favor, selecciona una fecha inicial.", "⚠️");
+            return;
+        }
+
+        const globalCloud = document.getElementById('globalCloudStatus');
+        globalCloud.textContent = "⏳ Procesando secuencia...";
+
+        let secuenciaBase = [];
+        if (tipoPatron === "4x4_dia") { 
+            secuenciaBase = ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L']; 
+        } else if (tipoPatron === "4x4_noche") { 
+            secuenciaBase = ['N', 'N', 'N', 'N', 'L', 'L', 'L', 'L']; 
+        } else if (tipoPatron === "4x4_rotativo") { 
+            secuenciaBase = ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L', 'N', 'N', 'N', 'N']; 
+        }
+
+        const fechaOrigen = new Date(fechaStringInput + "T00:00:00");
+        const diasAIterar = 180; 
+
+        for (let paso = 0; paso < diasAIterar; paso++) {
+            const fechaCiclo = new Date(fechaOrigen.getTime());
+            fechaCiclo.setDate(fechaOrigen.getDate() + paso);
+
+            const indiceCalculado = paso % secuenciaBase.length;
+            const turnoAsignado = secuenciaBase[indiceCalculado];
+
+            const añoC = fechaCiclo.getFullYear();
+            const mesC = String(fechaCiclo.getMonth() + 1).padStart(2, '0');
+            const diaC = String(fechaCiclo.getDate()).padStart(2, '0');
+            const fechaClaveFirestore = `${añoC}-${mesC}-${diaC}`;
+
+            await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", fechaClaveFirestore), {
+                texto: turnoAsignado,
+                horasCustom: ""
+            });
+        }
+
+        globalCloud.textContent = "☁️ Sincronizado";
+        showToast("Secuencia continua de 4x4 aplicada en la nube.", "🔄");
+        
+        setTimeout(() => {
+            renderCalendarioCompleto();
+        }, 1000);
+    });
+
+    /* LÓGICA DE BORRADO DE HORARIO */
+    document.getElementById('btnEliminarTodo').addEventListener('click', async () => {
+        const confirmar = confirm("⚠️ ¿Estás completamente seguro de que deseas eliminar todo el horario y rearmarlo desde cero? Esto vaciará tus celdas de turnos.");
+        
+        if (confirmar) {
+            const globalCloud = document.getElementById('globalCloudStatus');
+            globalCloud.textContent = "⏳ Limpiando base de datos...";
+
+            // Limpieza progresiva de 180 días a partir del mes actual visible
+            const fechaInicioBorrado = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const diasALimpiar = 180;
+
+            for (let paso = 0; paso < diasALimpiar; paso++) {
+                const fechaCiclo = new Date(fechaInicioBorrado.getTime());
+                fechaCiclo.setDate(fechaInicioBorrado.getDate() + paso);
+
+                const añoC = fechaCiclo.getFullYear();
+                const mesC = String(fechaCiclo.getMonth() + 1).padStart(2, '0');
+                const diaC = String(fechaCiclo.getDate()).padStart(2, '0');
+                const fechaClaveFirestore = `${añoC}-${mesC}-${diaC}`;
+
+                await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", fechaClaveFirestore), {
+                    texto: "",
+                    horasCustom: ""
+                });
+            }
+
+            globalCloud.textContent = "☁️ Sincronizado";
+            showToast("Horario completo eliminado con éxito.", "🗑️");
+            
+            renderCalendarioCompleto();
+        }
+    });
 </script>
 </body>
 </html>
