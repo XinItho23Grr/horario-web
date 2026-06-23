@@ -76,6 +76,56 @@
         }
         .logout-btn:hover { background: #dc2626; }
 
+        /* Panel de Auto-completado */
+        .auto-panel { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .panel-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .panel-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .auto-panel input, .auto-panel select {
+            background: #0f172a;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .auto-btn {
+            padding: 10px 20px;
+            background: linear-gradient(to right, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        .auto-btn:hover { opacity: 0.9; }
+
         /* Cabecera del Calendario */
         .calendar-header { 
             background: var(--card-bg);
@@ -135,7 +185,6 @@
             padding: 8px 0; 
         }
 
-        /* Fines de semana destacados en rojo sutil */
         .weekday:nth-child(6), .weekday:nth-child(7) {
             color: #f43f5e;
         }
@@ -143,7 +192,7 @@
         /* Celdas de los Días */
         .day-cell { 
             background: var(--card-bg); 
-            min-height: 120px; 
+            min-height: 125px; 
             border-radius: 10px; 
             padding: 10px; 
             display: flex; 
@@ -157,14 +206,35 @@
             transform: translateY(-2px);
         }
 
+        .cell-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
         .day-number { 
             font-size: 14px; 
             font-weight: 700; 
             color: var(--text-muted); 
-            align-self: flex-start;
         }
 
-        /* Espacio central: Icono y horas */
+        /* Botón de configuración de horas */
+        .edit-hours-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px;
+            border-radius: 4px;
+            transition: color 0.2s;
+        }
+        .edit-hours-btn:hover {
+            color: var(--text-main);
+        }
+
+        /* Espacio central */
         .center-space {
             display: flex;
             flex-direction: column;
@@ -175,15 +245,8 @@
             margin: 4px 0;
         }
 
-        .turno-icon {
-            font-size: 24px;
-        }
-
-        .turno-hours {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-muted);
-        }
+        .turno-icon { font-size: 24px; }
+        .turno-hours { font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: center; }
 
         /* Selector integrado inferior */
         .select-turno { 
@@ -199,9 +262,9 @@
             cursor: pointer;
         }
 
-        /* Clases de estado dinámicas aplicadas por JavaScript */
+        /* Clases de estado dinámicas */
         .day-cell.state-dia { background-color: var(--dia-color); }
-        .day-cell.state-dia .day-number, .day-cell.state-dia .turno-hours { color: #1e293b; }
+        .day-cell.state-dia .day-number, .day-cell.state-dia .turno-hours, .day-cell.state-dia .edit-hours-btn { color: #1e293b; }
         .day-cell.state-dia .select-turno { background: rgba(255, 255, 255, 0.25); color: #1e293b; border-color: rgba(0,0,0,0.1); }
 
         .day-cell.state-noche { background-color: var(--noche-color); }
@@ -216,20 +279,16 @@
         .day-cell.state-libre .day-number, .day-cell.state-libre .turno-hours { color: var(--text-main); }
         .day-cell.state-libre .select-turno { background: rgba(0, 0, 0, 0.3); color: var(--text-main); border-color: rgba(255,255,255,0.1); }
 
-        /* Estado global de Guardado en la esquina superior */
-        .save-status {
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
+        .save-status { font-size: 12px; color: var(--text-muted); font-weight: 600; }
 
-        /* 5. Adaptabilidad Móvil (Responsive Design) */
         @media (max-width: 768px) {
             body { padding: 10px; }
-            .day-cell { min-height: 100px; padding: 6px; }
+            .auto-panel { flex-direction: column; align-items: stretch; }
+            .panel-group { flex-direction: column; align-items: stretch; gap: 8px; }
+            .auto-btn { width: 100%; text-align: center; }
+            .day-cell { min-height: 110px; padding: 6px; }
             .turno-icon { font-size: 20px; }
             .turno-hours { font-size: 10px; }
-            .select-turno { font-size: 11px; padding: 4px; }
         }
     </style>
 </head>
@@ -242,15 +301,30 @@
         <button class="logout-btn" id="logoutBtn">Cerrar Sesión</button>
     </header>
 
+    <div class="auto-panel">
+        <div class="panel-group">
+            <label>Auto-completar desde el Día:</label>
+            <input type="number" id="autoDiaInicio" min="1" max="31" placeholder="Ej: 1" style="max-width: 80px;">
+            <label>Turno Inicial:</label>
+            <select id="autoTurnoInicial">
+                <option value="D">☀️ Día (D)</option>
+                <option value="N">🌙 Noche (N)</option>
+                <option value="L">💤 Libre (L)</option>
+                <option value="E">⏰ Extra (E)</option>
+            </select>
+        </div>
+        <button class="auto-btn" id="autoCompletarBtn">Aplicar Patrón 4x4</button>
+    </div>
+
     <div>
         <div class="calendar-header">
-            <h2>Vista Mensual</h2>
+            <h2>Vista Mensual (31 Días)</h2>
         </div>
 
         <div class="leyenda">
-            <div class="leyenda-item"><div class="box dia"></div> <span>Día (8:00 - 20:00)</span></div>
-            <div class="leyenda-item"><div class="box noche"></div> <span>Noche (20:00 - 8:00)</span></div>
-            <div class="leyenda-item"><div class="box extra"></div> <span>Extra</span></div>
+            <div class="leyenda-item"><div class="box dia"></div> <span>Día</span></div>
+            <div class="leyenda-item"><div class="box noche"></div> <span>Noche</span></div>
+            <div class="leyenda-item"><div class="box extra"></div> <span>Extra (Reloj)</span></div>
             <div class="leyenda-item"><div class="box libre"></div> <span>Libre</span></div>
         </div>
 
@@ -287,12 +361,12 @@
 
     let currentUser = null;
 
-    // Configuración visual por cada tipo de guardia
+    // Configuración visual por turno (Modificado a Reloj ⏰ en Extra)
     const infoTurnos = {
         "":  { icon: "❓", horas: "Sin asignar", class: "" },
         "D": { icon: "☀️", horas: "08:00 - 20:00", class: "state-dia" },
         "N": { icon: "🌙", horas: "20:00 - 08:00", class: "state-noche" },
-        "E": { icon: "⭐", horas: "Turno Extra", class: "state-extra" },
+        "E": { icon: "⏰", horas: "Turno Extra", class: "state-extra" },
         "L": { icon: "💤", horas: "Descanso", class: "state-libre" }
     };
 
@@ -317,10 +391,21 @@
             const cell = document.createElement('div');
             cell.className = 'day-cell';
             
+            const topBar = document.createElement('div');
+            topBar.className = 'cell-top';
+
             const number = document.createElement('div');
             number.className = 'day-number';
             number.textContent = i;
             
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-hours-btn';
+            editBtn.textContent = "⚙️";
+            editBtn.title = "Cambiar horas de trabajo";
+
+            topBar.appendChild(number);
+            topBar.appendChild(editBtn);
+
             const centerSpace = document.createElement('div');
             centerSpace.className = 'center-space';
             
@@ -341,51 +426,125 @@
                 <option value="">Seleccionar...</option>
                 <option value="D">☀️ Día</option>
                 <option value="N">🌙 Noche</option>
-                <option value="E">⭐ Extra</option>
+                <option value="E">⏰ Extra</option>
                 <option value="L">💤 Libre</option>
             `;
             
-            cell.appendChild(number);
+            cell.appendChild(topBar);
             cell.appendChild(centerSpace);
             cell.appendChild(select);
             grid.appendChild(cell);
 
-            // Mantenemos la estructura exacta de rutas que tenías antes: `dia_1`, `dia_2`, etc.
+            // Cargar datos (Turno y Horas personalizadas si existen)
             const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`);
             getDoc(docRef).then((docSnap) => {
                 if (docSnap.exists()) {
-                    const valorTurno = docSnap.data().texto || "";
+                    const data = docSnap.data();
+                    const valorTurno = data.texto || "";
+                    const horasPersonalizadas = data.horasCustom || "";
+                    
                     select.value = valorTurno;
-                    actualizarEstilosCelda(cell, iconSpan, hoursSpan, valorTurno);
+                    actualizarEstilosCelda(cell, iconSpan, hoursSpan, valorTurno, horasPersonalizadas);
                 }
             });
 
-            // Al cambiar el selector, se guarda de inmediato y se actualizan los colores
+            // Guardar al cambiar el tipo de turno
             select.addEventListener('change', () => {
                 const globalCloud = document.getElementById('globalCloudStatus');
                 globalCloud.textContent = "⏳ Guardando...";
                 
                 const valorSeleccionado = select.value;
-                actualizarEstilosCelda(cell, iconSpan, hoursSpan, valorSeleccionado);
+                actualizarEstilosCelda(cell, iconSpan, hoursSpan, valorSeleccionado, "");
 
                 setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`), {
-                    texto: valorSeleccionado
+                    texto: valorSeleccionado,
+                    horasCustom: "" // Se reinicia al cambiar el tipo de turno
                 })
                 .then(() => { globalCloud.textContent = "☁️ Guardado en nube"; })
                 .catch(() => { globalCloud.textContent = "❌ Error"; });
             });
+
+            // Botón de engranaje para modificar las horas de trabajo a mano
+            editBtn.addEventListener('click', () => {
+                if (!select.value) {
+                    alert("Primero selecciona un tipo de turno para este día.");
+                    return;
+                }
+                const horaActualTexto = hoursSpan.textContent;
+                const nuevaHora = prompt(`Cambiar horas del día ${i} (${select.value}):`, horaActualTexto);
+                
+                if (nuevaHora !== null) {
+                    const globalCloud = document.getElementById('globalCloudStatus');
+                    globalCloud.textContent = "⏳ Guardando horas...";
+                    
+                    hoursSpan.textContent = nuevaHora;
+
+                    setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`), {
+                        texto: select.value,
+                        horasCustom: nuevaHora
+                    })
+                    .then(() => { globalCloud.textContent = "☁️ Guardado en nube"; })
+                    .catch(() => { globalCloud.textContent = "❌ Error"; });
+                }
+            });
         }
     }
 
-    function actualizarEstilosCelda(celda, icono, horas, estado) {
+    function actualizarEstilosCelda(celda, icono, horas, estado, horasCustom) {
         celda.classList.remove('state-dia', 'state-noche', 'state-extra', 'state-libre');
         const info = infoTurnos[estado] || infoTurnos[""];
         icono.textContent = info.icon;
-        horas.textContent = info.horas;
+        
+        // Si hay una hora personalizada guardada en la base de datos la prioriza, sino usa la de por defecto
+        horas.textContent = horasCustom ? horasCustom : info.horas;
+        
         if (info.class) {
             celda.classList.add(info.class);
         }
     }
+
+    // Lógica del Autocompletado Secuencial 4x4 (Adaptada a tu base de datos estática)
+    document.getElementById('autoCompletarBtn').addEventListener('click', async () => {
+        const diaInicio = parseInt(document.getElementById('autoDiaInicio').value);
+        const turnoInicial = document.getElementById('autoTurnoInicial').value;
+
+        if (!diaInicio || diaInicio < 1 || diaInicio > 31) {
+            alert("Por favor, ingresa un número de día válido entre 1 y 31.");
+            return;
+        }
+
+        const globalCloud = document.getElementById('globalCloudStatus');
+        globalCloud.textContent = "⏳ Autocompletando patrón...";
+
+        const patron = [
+            'D','D','D','D',
+            'N','N','N','N',
+            'L','L','L','L'
+        ];
+
+        let indiceCiclo = patron.indexOf(turnoInicial);
+
+        // Llenar desde el día elegido hasta el día 31
+        for (let i = 1; i <= 31; i++) {
+            if (i >= diaInicio) {
+                const desplazamiento = i - diaInicio;
+                const indiceCalculado = (indiceCiclo + desplazamiento) % patron.length;
+                const turnoAsignado = patron[indiceCalculado];
+
+                // Guardar directamente en tus documentos fijos `dia_1`, `dia_2`...
+                await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`), {
+                    texto: turnoAsignado,
+                    horasCustom: ""
+                });
+            }
+        }
+
+        globalCloud.textContent = "☁️ Sincronizado";
+        alert("¡Patrón rotativo 4x4 aplicado perfectamente!");
+        
+        // Refrescar la pantalla de inmediato
+        window.location.reload();
+    });
 </script>
 </body>
 </html>
