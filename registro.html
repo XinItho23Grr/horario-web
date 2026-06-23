@@ -3,94 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Guardias 4x4</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <title>Horario Web - Registro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .auth-container { max-width: 400px; width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        h2 { text-align: center; color: #818cf8; margin-top: 0; }
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        .form-group label { font-size: 14px; color: #94a3b8; margin-bottom: 5px; }
-        .form-group input { background-color: #0f172a; color: #f8fafc; border: 1px solid #334155; padding: 10px; border-radius: 8px; outline: none; }
-        
-        /* Contenedor especial para la contraseña con el ojo */
-        .password-wrapper { position: relative; display: flex; flex-direction: column; }
-        .password-wrapper input { padding-right: 40px; width: 100%; box-sizing: border-box; }
-        .toggle-password { position: absolute; right: 12px; top: 33px; cursor: pointer; font-size: 16px; user-select: none; }
-        
-        .btn-auth { width: 100%; background: linear-gradient(to right, #818cf8, #4f46e5); color: white; border: none; padding: 12px; font-size: 15px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; }
-        .auth-toggle { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 15px; }
-        .auth-toggle a { color: #818cf8; text-decoration: underline; cursor: pointer; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #4f46e5, #06b6d4); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #1e293b; margin-bottom: 24px; font-size: 28px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; color: #64748b; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+        input { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #4f46e5; }
+        .password-container { position: relative; }
+        .toggle-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #64748b; }
+        button.submit-btn { width: 100%; padding: 14px; background: #06b6d4; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+        button.submit-btn:hover { background: #0891b2; }
+        p { margin-top: 20px; color: #64748b; font-size: 14px; }
+        a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <div class="auth-container">
-        <h2>Crear Cuenta Nueva</h2>
-        
-        <div class="form-group">
-            <label for="authName">Nombre Completo</label>
-            <input type="text" id="authName" placeholder="Tu nombre y apellido">
+<div class="container">
+    <h2>Crear Cuenta</h2>
+    <form id="registerForm">
+        <div class="input-group">
+            <label>Nombre Completo</label>
+            <input type="text" id="nombre" required placeholder="Tu nombre">
         </div>
-
-        <div class="form-group">
-            <label for="authEmail">Correo Electrónico</label>
-            <input type="email" id="authEmail" placeholder="ejemplo@correo.com">
+        <div class="input-group">
+            <label>Correo Electrónico</label>
+            <input type="email" id="email" required placeholder="correo@ejemplo.com">
         </div>
-
-        <div class="form-group password-wrapper">
-            <label for="authPassword">Contraseña (Mínimo 6 caracteres)</label>
-            <input type="password" id="authPassword" placeholder="Crea una contraseña segura">
-            <span class="toggle-password" id="eyeIcon" onclick="togglePasswordVisibility()">👁️</span>
+        <div class="input-group">
+            <label>Contraseña</label>
+            <div class="password-container">
+                <input type="password" id="password" required placeholder="Mínimo 6 caracteres">
+                <button type="button" class="toggle-btn" id="togglePassword">👁️</button>
+            </div>
         </div>
+        <button type="submit" class="submit-btn">Registrarse</button>
+    </form>
+    <p>¿Ya tienes cuenta? <a href="index.html">Inicia sesión aquí</a></p>
+</div>
 
-        <button class="btn-auth" onclick="registrarUsuario()">Registrarse</button>
-        <div class="auth-toggle">
-            ¿Ya tienes cuenta? <a href="index.html">Inicia sesión aquí</a>
-        </div>
-    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-<script>
-    const firebaseConfig = { apiKey: "TEMPORAL", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCu4ytuNDZa5MrNgZ2Vlb20Mh6xeBCMqk",
+      authDomain: "calendario-4x4-f66d7.firebaseapp.com",
+      projectId: "calendario-4x4-f66d7",
+      storageBucket: "calendario-4x4-f66d7.firebasestorage.app",
+      messagingSenderId: "441544580100",
+      appId: "1:441544580100:web:7afd53b9933afdf9c36951",
+      measurementId: "G-908HDX2J47"
+    };
 
-    // Función para mostrar/ocultar contraseña cambiando el emoji del ojo
-    function togglePasswordVisibility() {
-        const passwordInput = document.getElementById('authPassword');
-        const eyeIcon = document.getElementById('eyeIcon');
-        
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            eyeIcon.innerText = '➖';
-        } else {
-            passwordInput.type = 'password';
-            eyeIcon.innerText = '👁️';
-        }
-    }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-    function registrarUsuario() {
-        const nombre = document.getElementById('authName').value.trim();
-        const email = document.getElementById('authEmail').value.trim();
-        const password = document.getElementById('authPassword').value;
+    // Mostrar/ocultar contraseña
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    togglePasswordBtn.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
+    });
 
-        if (!nombre || !email || !password) return alert("Completa todos los campos");
-        if (password.length < 6) return alert("La contraseña debe tener mínimo 6 caracteres");
+    // Lógica del Registro
+    document.getElementById('registerForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nombre = document.getElementById('nombre').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
 
-        auth.createUserWithEmailAndPassword(email, password)
+        createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                // Guardamos el nombre en el perfil del usuario de Firebase
-                return userCredential.user.updateProfile({
+                // Guardar el nombre en el perfil del usuario
+                updateProfile(userCredential.user, {
                     displayName: nombre
+                }).then(() => {
+                    alert("¡Cuenta creada con éxito!");
+                    window.location.href = "calendario.html";
                 });
             })
-            .then(() => {
-                alert("¡Cuenta creada exitosamente!");
-                window.location.href = "calendario.html";
-            })
-            .catch(error => alert("Error de registro: " + error.message));
-    }
+            .catch((error) => {
+                alert("Error de registro: " + error.message);
+            });
+    });
 </script>
 </body>
 </html>
