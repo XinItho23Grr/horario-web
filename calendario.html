@@ -1,105 +1,79 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Mi Calendario de Guardia 4x4 Cloud</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <style>
-        :root { --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8; --border-color: #334155; --dia-color: #f59e0b; --noche-color: #3b82f6; --extra-color: #10b981; --libre-color: #475569; }
-        body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 1000px; width: 100%; }
-        .auto-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px 20px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--card-bg); padding: 15px; border-radius: 16px; border: 1px solid var(--border-color); gap: 8px; }
-        .day { min-height: 120px; background-color: #1e293b; border: 1px solid var(--border-color); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; }
-        .btn-auto { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        .btn-danger { background: #ef4444; }
-        .select-turno { width: 100%; font-size: 10px; background: #0f172a; color: white; border: 1px solid #334155; border-radius: 4px; margin-top: auto; }
-    </style>
-</head>
-<body>
+<div class="modal-edit-mode" id="modalEditContainer">
+    <label class="form-label">Tipo de Turno</label>
+    <select class="modal-select" id="modalSelectTurno">
+        <option value="">Sin Asignar</option>
+        <option value="D">☀️ Día</option>
+        <option value="N">🌙 Noche</option>
+        <option value="E">⏰ Extra</option>
+        <option value="L">💤 Libre</option>
+    </select>
 
-<div class="container">
-    <h1>Mi Calendario de Guardia 4x4 Cloud</h1>
-    <div class="auto-panel">
-        <input type="date" id="fechaInicioAuto">
-        <select id="tipoCicloAuto">
-            <option value="4x4_rotativo">🔄 4x4 Día y Noche (16 días)</option>
-            <option value="4x4_dia">☀️ 4x4 Solo Día</option>
-            <option value="4x4_noche">🌙 4x4 Solo Noche</option>
-        </select>
-        <button class="btn-auto" onclick="generarCiclo4x4()">⚡ Aplicar</button>
-        <button class="btn-auto btn-danger" onclick="eliminarTodo()">🗑️ Eliminar Todo</button>
+    <label class="form-label">Hora de Inicio - Fin</label>
+    <div style="display: flex; gap: 8px;">
+        <input type="time" class="modal-input" id="modalInputStart">
+        <input type="time" class="modal-input" id="modalInputEnd">
     </div>
-    <div class="calendar-grid" id="calendario"></div>
+
+    <div class="modal-actions-layout" style="margin-top: 28px;">
+        <button class="circle-action-btn btn-close-x" id="btnCancelarEdicion">❌</button>
+        <button class="circle-action-btn btn-save-disk" id="btnGuardarModal">💾</button>
+    </div>
 </div>
 
-<script>
-    // --- CONFIGURACIÓN ---
-    const firebaseConfig = {
-        apiKey: "TU_API_KEY",
-        authDomain: "calendario-4x4-f66d7.firebaseapp.com",
-        projectId: "calendario-4x4-f66d7",
-        storageBucket: "calendario-4x4-f66d7.firebasestorage.app",
-        messagingSenderId: "441544580100",
-        appId: "1:441544580100:web:7afd53b9933afdf9c36951"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+<script type="module">
+    // ... (Mantén toda tu configuración de Firebase igual)
 
-    // --- LÓGICA DE DATOS ---
-    const coleccion = db.collection("turnos_4x4");
-    
-    // Carga inicial y tiempo real
-    coleccion.onSnapshot(snap => {
-        let datos = {};
-        snap.forEach(doc => datos[doc.id] = doc.data());
-        renderizar(datos);
+    // Ajuste en la función abrirModal para separar las horas
+    function abrirModal(nombreDia, numeroDia, turnoActual, horasActuales) {
+        document.getElementById('modalDateTitle').textContent = `${nombreDia} ${numeroDia}`;
+        const info = infoTurnos[turnoActual] || infoTurnos[""];
+        
+        document.getElementById('viewIcon').textContent = turnoActual ? info.icon : "❓";
+        document.getElementById('viewName').textContent = info.name;
+        document.getElementById('viewHours').textContent = horasActuales ? horasActuales : (turnoActual ? info.horas : "--:--");
+
+        selectModal.value = turnoActual;
+        
+        // Separamos el horario si existe (Ejemplo: "08:00 - 20:00")
+        if (horasActuales && horasActuales.includes(" - ")) {
+            const partes = horasActuales.split(" - ");
+            document.getElementById('modalInputStart').value = partes[0];
+            document.getElementById('modalInputEnd').value = partes[1];
+        } else {
+            // Valores por defecto si no hay custom
+            document.getElementById('modalInputStart').value = "";
+            document.getElementById('modalInputEnd').value = "";
+        }
+
+        viewContainer.style.display = "block";
+        editContainer.style.display = "none";
+        modal.classList.add('active');
+    }
+
+    // Ajuste en btnGuardarModal
+    document.getElementById('btnGuardarModal').addEventListener('click', () => {
+        if (!fechaSeleccionadaGlobal) return;
+
+        const start = document.getElementById('modalInputStart').value;
+        const end = document.getElementById('modalInputEnd').value;
+        const nuevasHoras = (start && end) ? `${start} - ${end}` : "";
+        
+        const nuevoTurno = selectModal.value;
+        
+        // Guardado con la misma notificación centralizada
+        setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", fechaSeleccionadaGlobal), {
+            texto: nuevoTurno,
+            horasCustom: nuevasHoras
+        })
+        .then(() => { 
+            showToast("Cambios guardados con éxito.", "💾");
+            cerrarModal();
+            renderCalendarioCompleto();
+        })
+        .catch((err) => { 
+            showToast("Error al guardar.", "❌");
+        });
     });
 
-    function renderizar(datos) {
-        const grid = document.getElementById('calendario');
-        grid.innerHTML = '';
-        // (Aquí mantienes tu lógica de bucle para pintar los días)
-        // Ejemplo de inserción de turno:
-        // const d = datos[fechaClave];
-        // div.innerHTML = d ? `<div>${d.icono} ${d.horas}</div>` : '?';
-    }
-
-    async function generarCiclo4x4() {
-        const fechaBase = new Date(document.getElementById('fechaInicioAuto').value + "T00:00:00");
-        const tipo = document.getElementById('tipoCicloAuto').value;
-        const patrones = {
-            '4x4_rotativo': ['dia','dia','dia','dia','libre','libre','libre','libre','noche','noche','noche','noche','libre','libre','libre','libre'],
-            '4x4_dia': ['dia','dia','dia','dia','libre','libre','libre','libre'],
-            '4x4_noche': ['noche','noche','noche','noche','libre','libre','libre','libre']
-        };
-
-        const seq = patrones[tipo];
-        const batch = db.batch();
-        
-        for(let i=0; i<120; i++) {
-            let f = new Date(fechaBase);
-            f.setDate(f.getDate() + i);
-            let id = f.toISOString().split('T')[0];
-            batch.set(coleccion.doc(id), { 
-                tipo: seq[i % seq.length], 
-                icono: seq[i % seq.length] === 'dia' ? '☀️' : seq[i % seq.length] === 'noche' ? '🌙' : '🏡',
-                horas: seq[i % seq.length] === 'dia' ? '08:00 - 20:00' : '20:00 - 08:00'
-            });
-        }
-        await batch.commit();
-        alert("Ciclo aplicado");
-    }
-
-    async function eliminarTodo() {
-        if(!confirm("¿Borrar todo el calendario?")) return;
-        const snapshot = await coleccion.get();
-        const batch = db.batch();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-        alert("Calendario vacío");
-    }
+    // ... (El resto del código se mantiene igual para que siga funcionando la lógica anterior)
 </script>
-</body>
-</html>
