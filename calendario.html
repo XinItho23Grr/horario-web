@@ -245,9 +245,7 @@
 
         .save-status { font-size: 12px; color: var(--text-muted); font-weight: 600; }
 
-        /* ========================================================
-           6. VENTANA MODAL EMERGENTE (AL MEDIO)
-           ======================================================== */
+        /* Ventana Modal */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -260,9 +258,7 @@
             opacity: 0; pointer-events: none;
             transition: opacity 0.2s ease;
         }
-        .modal-overlay.active {
-            opacity: 1; pointer-events: auto;
-        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal-content {
             background: #1e293b;
             border: 1px solid var(--border-color);
@@ -274,48 +270,19 @@
             transform: scale(0.95);
             transition: transform 0.2s ease;
         }
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--text-main); }
-        .close-modal-btn {
-            background: transparent; border: none; color: var(--text-muted);
-            font-size: 20px; cursor: pointer;
-        }
+        .close-modal-btn { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
         .close-modal-btn:hover { color: #ef4444; }
 
-        .form-label {
-            display: block; font-size: 13px; font-weight: 600;
-            color: var(--text-muted); margin-bottom: 8px; margin-top: 16px;
-        }
-        .modal-select {
-            width: 100%; padding: 10px; background: #0f172a;
-            color: var(--text-main); border: 1px solid var(--border-color);
-            border-radius: 8px; font-size: 14px; font-weight: 600; outline: none;
-        }
-        .modal-input {
-            width: 100%; padding: 10px; background: #0f172a;
-            color: var(--text-main); border: 1px solid var(--border-color);
-            border-radius: 8px; font-size: 14px; outline: none;
-        }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; margin-top: 16px; }
+        .modal-select, .modal-input { width: 100%; padding: 10px; background: #0f172a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; }
+        .modal-select { font-weight: 600; }
 
-        .modal-actions {
-            display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;
-        }
-        .btn-cancelar {
-            padding: 10px 16px; background: #334155; color: var(--text-main);
-            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
-        }
-        .btn-guardar {
-            padding: 10px 20px; background: #2563eb; color: white;
-            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
-        }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancelar { padding: 10px 16px; background: #334155; color: var(--text-main); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-guardar { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .btn-guardar:hover { background: #1d4ed8; }
 
         @media (max-width: 768px) {
@@ -340,17 +307,16 @@
 
     <div class="auto-panel">
         <div class="panel-group">
-            <label>Auto-completar desde el Día:</label>
-            <input type="number" id="autoDiaInicio" min="1" max="31" placeholder="Ej: 1" style="max-width: 80px;">
-            <label>Turno Inicial:</label>
-            <select id="autoTurnoInicial">
-                <option value="D">☀️ Día (D)</option>
-                <option value="N">🌙 Noche (N)</option>
-                <option value="L">💤 Libre (L)</option>
-                <option value="E">⏰ Extra (E)</option>
+            <label>Empezar en el Día:</label>
+            <input type="number" id="autoDiaInicio" min="1" max="31" placeholder="Ej: 1" style="max-width: 70px;">
+            <label>Tipo de Patrón:</label>
+            <select id="autoTipoPatron">
+                <option value="4x4_dia">☀️ 4x4 Solo Día (4D - 4L)</option>
+                <option value="4x4_noche">🌙 4x4 Solo Noche (4N - 4L)</option>
+                <option value="4x4_rotativo">🔄 4x4 Día y Noche (4D - 4N - 4L)</option>
             </select>
         </div>
-        <button class="auto-btn" id="autoCompletarBtn">Aplicar Patrón 4x4</button>
+        <button class="auto-btn" id="autoCompletarBtn">Aplicar Secuencia</button>
     </div>
 
     <div>
@@ -423,7 +389,7 @@
     const db = getFirestore(app);
 
     let currentUser = null;
-    let diaSeleccionadoGlobal = null; // Guarda qué número de día se está editando en la ventana modal
+    let diaSeleccionadoGlobal = null;
 
     const infoTurnos = {
         "":  { icon: "❓", horas: "Sin asignar", class: "" },
@@ -479,7 +445,6 @@
             cell.appendChild(centerSpace);
             grid.appendChild(cell);
 
-            // Cargar datos iniciales desde Firestore
             const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`);
             getDoc(docRef).then((docSnap) => {
                 if (docSnap.exists()) {
@@ -492,7 +457,6 @@
                 }
             });
 
-            // AL HACER CLICK EN EL CUADRO: Abrir la ventana modal del medio
             cell.addEventListener('click', () => {
                 diaSeleccionadoGlobal = i;
                 abrirModal(i, cell.getAttribute('data-turno') || "", cell.getAttribute('data-horas') || "");
@@ -510,9 +474,6 @@
         }
     }
 
-    /* ========================================================
-       LÓGICA DE CONTROL DEL MODAL EMERGENTE
-       ======================================================== */
     const modal = document.getElementById('editModal');
     const selectModal = document.getElementById('modalSelectTurno');
     const inputModal = document.getElementById('modalInputHours');
@@ -520,31 +481,21 @@
     function abrirModal(numeroDia, turnoActual, horasActuales) {
         document.getElementById('modalTitle').textContent = `Configurar Día ${numeroDia}`;
         selectModal.value = turnoActual;
-        
-        // Si no tiene horas personalizadas, sugerir la por defecto del turno al cambiarlo
         inputModal.value = horasActuales;
         modal.classList.add('active');
     }
 
-    // Cerrar Modal al dar Cancelar o en la X
     document.getElementById('closeModalX').addEventListener('click', cerrarModal);
     document.getElementById('btnCancelarModal').addEventListener('click', cerrarModal);
     
-    function cerrarModal() {
-        modal.classList.remove('active');
-    }
+    function cerrarModal() { modal.classList.remove('active'); }
 
-    // Auto-rellenar input de horas al cambiar la opción en la ventana modal
     selectModal.addEventListener('change', () => {
         const estado = selectModal.value;
-        if (estado && !inputModal.value) {
-            inputModal.value = infoTurnos[estado].horas;
-        } else if (!estado) {
-            inputModal.value = "";
-        }
+        if (estado && !inputModal.value) { inputModal.value = infoTurnos[estado].horas; }
+        else if (!estado) { inputModal.value = ""; }
     });
 
-    // GUARDAR CAMBIOS DESDE LA MODAL
     document.getElementById('btnGuardarModal').addEventListener('click', () => {
         if (diaSeleccionadoGlobal === null) return;
 
@@ -554,17 +505,14 @@
         const nuevoTurno = selectModal.value;
         const nuevasHoras = inputModal.value;
 
-        // Buscar elementos de la celda afectada en la cuadrícula
         const celda = document.getElementById(`cell-dia-${diaSeleccionadoGlobal}`);
         const icono = document.getElementById(`icon-dia-${diaSeleccionadoGlobal}`);
         const horas = document.getElementById(`hours-dia-${diaSeleccionadoGlobal}`);
 
-        // Actualizar atributos de datos y diseño visual en tiempo real
         celda.setAttribute('data-turno', nuevoTurno);
         celda.setAttribute('data-horas', nuevasHoras);
         actualizarEstilosCelda(celda, icono, horas, nuevoTurno, nuevasHoras);
 
-        // Subir cambios exactos a Firestore usando tus rutas nativas `dia_X`
         setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${diaSeleccionadoGlobal}`), {
             texto: nuevoTurno,
             horasCustom: nuevasHoras
@@ -573,42 +521,50 @@
             globalCloud.textContent = "☁️ Guardado en nube"; 
             cerrarModal();
         })
-        .catch(() => { 
-            globalCloud.textContent = "❌ Error"; 
-        });
+        .catch(() => { globalCloud.textContent = "❌ Error"; });
     });
 
-    // Lógica del Autocompletado Secuencial 4x4
+    /* ========================================================
+       LÓGICA MEJORADA DE AUTOCOMPLETADO CON TRES PATRONES
+       ======================================================== */
     document.getElementById('autoCompletarBtn').addEventListener('click', async () => {
         const diaInicio = parseInt(document.getElementById('autoDiaInicio').value);
-        const turnoInicial = document.getElementById('autoTurnoInicial').value;
+        const tipoPatron = document.getElementById('autoTipoPatron').value;
 
         if (!diaInicio || diaInicio < 1 || diaInicio > 31) {
-            alert("Por favor, ingresa un número de día válido entre 1 y 31.");
+            alert("Por favor, ingresa un número de día inicial válido (1 al 31).");
             return;
         }
 
         const globalCloud = document.getElementById('globalCloudStatus');
-        globalCloud.textContent = "⏳ Autocompletando patrón...";
+        globalCloud.textContent = "⏳ Generando patrón seleccionado...";
 
-        const patron = ['D','D','D','D','N','N','N','N','L','L','L','L'];
-        let indiceCiclo = patron.indexOf(turnoInicial);
+        // Definir los vectores de patrones según la selección del usuario
+        let patron = [];
+        if (tipoPatron === "4x4_dia") {
+            patron = ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L'];
+        } else if (tipoPatron === "4x4_noche") {
+            patron = ['N', 'N', 'N', 'N', 'L', 'L', 'L', 'L'];
+        } else if (tipoPatron === "4x4_rotativo") {
+            patron = ['D', 'D', 'D', 'D', 'N', 'N', 'N', 'N', 'L', 'L', 'L', 'L'];
+        }
 
+        // Llenar cíclicamente desde el día indicado hasta el final del mes estático (31)
         for (let i = 1; i <= 31; i++) {
             if (i >= diaInicio) {
                 const desplazamiento = i - diaInicio;
-                const indiceCalculado = (indiceCiclo + desplazamiento) % patron.length;
+                const indiceCalculado = desplazamiento % patron.length;
                 const turnoAsignado = patron[indiceCalculado];
 
                 await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`), {
                     texto: turnoAsignado,
-                    horasCustom: ""
+                    horasCustom: "" // Resetea las horas para adoptar las del nuevo turno limpio
                 });
             }
         }
 
         globalCloud.textContent = "☁️ Sincronizado";
-        alert("¡Patrón rotativo 4x4 aplicado perfectamente!");
+        alert("¡Patrón automatizado guardado y sincronizado con éxito!");
         window.location.reload();
     });
 </script>
