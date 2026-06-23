@@ -1,79 +1,126 @@
-<div class="modal-edit-mode" id="modalEditContainer">
-    <label class="form-label">Tipo de Turno</label>
-    <select class="modal-select" id="modalSelectTurno">
-        <option value="">Sin Asignar</option>
-        <option value="D">☀️ Día</option>
-        <option value="N">🌙 Noche</option>
-        <option value="E">⏰ Extra</option>
-        <option value="L">💤 Libre</option>
-    </select>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horario Web - Gestión de Turnos Profesional</title>
+    <style>
+        /* ESTILOS DE DISEÑO PROFESIONAL */
+        :root { --bg-main: #090d16; --bg-surface: #131c2e; --bg-surface-hover: #1b273f; --text-primary: #f8fafc; --text-secondary: #94a3b8; --border-subtle: #22314d; --accent-primary: #3b82f6; --color-dia: #eab308; --color-noche: #3b82f6; --color-extra: #10b981; --color-libre: #475569; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-primary); min-height: 100vh; display: flex; justify-content: center; padding: 24px; }
+        .main-container { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 24px; }
+        header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); padding: 18px 28px; border-radius: 14px; border: 1px solid var(--border-subtle); }
+        h1 { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .auto-panel { background: var(--bg-surface); padding: 20px 28px; border-radius: 14px; border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+        .calendar-wrapper { background: var(--bg-surface); border-radius: 16px; border: 1px solid var(--border-subtle); overflow: hidden; }
+        .calendar-header-nav { padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border-subtle); padding: 1px; }
+        .weekday { text-transform: uppercase; font-size: 11px; font-weight: 700; text-align: center; color: var(--text-secondary); background: var(--bg-surface); padding: 14px 0; }
+        .day-cell { background: var(--bg-surface); min-height: 120px; padding: 14px; display: flex; flex-direction: column; cursor: pointer; transition: background-color 0.2s; }
+        .day-cell:hover { background-color: var(--bg-surface-hover); }
+        .day-number { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+        .center-space { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+        .turno-icon { font-size: 24px; }
+        .turno-hours { font-size: 11px; font-weight: 600; color: var(--text-secondary); opacity: 0.85; }
+        .state-dia { background-color: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.2); }
+        .state-noche { background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .state-libre { background-color: rgba(71, 85, 105, 0.1); }
+        .btn-danger-outline { background: rgba(239, 68, 68, 0.05); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 10px; }
+        .modal-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--bg-surface); padding: 28px; border-radius: 20px; width: 350px; text-align: center; }
+    </style>
+</head>
+<body>
 
-    <label class="form-label">Hora de Inicio - Fin</label>
-    <div style="display: flex; gap: 8px;">
-        <input type="time" class="modal-input" id="modalInputStart">
-        <input type="time" class="modal-input" id="modalInputEnd">
+<div class="main-container">
+    <header>
+        <h1 id="welcomeMessage">Cargando Sistema...</h1>
+        <div class="save-status" id="globalCloudStatus">☁️ Cloud Sync</div>
+        <button class="logout-btn" id="logoutBtn">Cerrar Sesión</button>
+    </header>
+
+    <div class="auto-panel">
+        <div>
+            <input type="date" id="autoFechaInicio">
+            <select id="autoTipoPatron">
+                <option value="4x4_dia">☀️ 4x4 Día</option>
+                <option value="4x4_noche">🌙 4x4 Noche</option>
+                <option value="4x4_rotativo">🔄 4x4 Rotativo</option>
+            </select>
+        </div>
+        <button class="auto-btn" id="autoCompletarBtn">Aplicar Secuencia</button>
     </div>
 
-    <div class="modal-actions-layout" style="margin-top: 28px;">
-        <button class="circle-action-btn btn-close-x" id="btnCancelarEdicion">❌</button>
-        <button class="circle-action-btn btn-save-disk" id="btnGuardarModal">💾</button>
+    <div class="calendar-wrapper">
+        <div class="calendar-header-nav">
+            <h2 id="monthYearTitle">Mes Año</h2>
+            <div><button id="btnPrevMonth">‹</button><button id="btnNextMonth">›</button></div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="weekday">Lun</div><div class="weekday">Mar</div><div class="weekday">Mié</div>
+            <div class="weekday">Jue</div><div class="weekday">Vie</div><div class="weekday">Sáb</div>
+            <div class="weekday">Dom</div>
+        </div>
+    </div>
+    <button class="btn-danger-outline" id="btnEliminarTodo">🗑️</button>
+</div>
+
+<div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+        <h3 id="modalDateTitle">Seleccionar</h3>
+        <select id="modalSelectTurno">
+            <option value="D">☀️ Día</option>
+            <option value="N">🌙 Noche</option>
+            <option value="E">⏰ Extra</option>
+            <option value="L">💤 Libre</option>
+        </select>
+        <button id="btnGuardarModal">💾</button>
+        <button id="btnCerrarModal">❌</button>
     </div>
 </div>
 
 <script type="module">
-    // ... (Mantén toda tu configuración de Firebase igual)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Ajuste en la función abrirModal para separar las horas
-    function abrirModal(nombreDia, numeroDia, turnoActual, horasActuales) {
-        document.getElementById('modalDateTitle').textContent = `${nombreDia} ${numeroDia}`;
-        const info = infoTurnos[turnoActual] || infoTurnos[""];
-        
-        document.getElementById('viewIcon').textContent = turnoActual ? info.icon : "❓";
-        document.getElementById('viewName').textContent = info.name;
-        document.getElementById('viewHours').textContent = horasActuales ? horasActuales : (turnoActual ? info.horas : "--:--");
+    const firebaseConfig = { /* TU CONFIG */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let currentUser, currentDate = new Date(), fechaSeleccionada;
 
-        selectModal.value = turnoActual;
-        
-        // Separamos el horario si existe (Ejemplo: "08:00 - 20:00")
-        if (horasActuales && horasActuales.includes(" - ")) {
-            const partes = horasActuales.split(" - ");
-            document.getElementById('modalInputStart').value = partes[0];
-            document.getElementById('modalInputEnd').value = partes[1];
-        } else {
-            // Valores por defecto si no hay custom
-            document.getElementById('modalInputStart').value = "";
-            document.getElementById('modalInputEnd').value = "";
-        }
-
-        viewContainer.style.display = "block";
-        editContainer.style.display = "none";
-        modal.classList.add('active');
-    }
-
-    // Ajuste en btnGuardarModal
-    document.getElementById('btnGuardarModal').addEventListener('click', () => {
-        if (!fechaSeleccionadaGlobal) return;
-
-        const start = document.getElementById('modalInputStart').value;
-        const end = document.getElementById('modalInputEnd').value;
-        const nuevasHoras = (start && end) ? `${start} - ${end}` : "";
-        
-        const nuevoTurno = selectModal.value;
-        
-        // Guardado con la misma notificación centralizada
-        setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", fechaSeleccionadaGlobal), {
-            texto: nuevoTurno,
-            horasCustom: nuevasHoras
-        })
-        .then(() => { 
-            showToast("Cambios guardados con éxito.", "💾");
-            cerrarModal();
-            renderCalendarioCompleto();
-        })
-        .catch((err) => { 
-            showToast("Error al guardar.", "❌");
-        });
+    // --- LÓGICA DE BORRADO MASIVO ---
+    document.getElementById('btnEliminarTodo').addEventListener('click', async () => {
+        if(!confirm("¿Borrar todo el historial de turnos?")) return;
+        const docs = await getDocs(collection(db, "usuarios_4x4", currentUser.uid, "turnos"));
+        docs.forEach(d => deleteDoc(d.ref));
+        alert("Horario eliminado");
+        location.reload();
     });
 
-    // ... (El resto del código se mantiene igual para que siga funcionando la lógica anterior)
+    // --- LÓGICA DE AUTOCOMPLETADO ---
+    document.getElementById('autoCompletarBtn').addEventListener('click', async () => {
+        const fechaBase = new Date(document.getElementById('autoFechaInicio').value + "T00:00:00");
+        const tipo = document.getElementById('autoTipoPatron').value;
+        const patrones = {
+            '4x4_dia': ['D','D','D','D','L','L','L','L'],
+            '4x4_noche': ['N','N','N','N','L','L','L','L'],
+            '4x4_rotativo': ['D','D','D','D','L','L','L','L','N','N','N','N']
+        };
+        const seq = patrones[tipo];
+        for(let i=0; i<180; i++) {
+            let f = new Date(fechaBase); f.setDate(f.getDate() + i);
+            let id = f.toISOString().split('T')[0];
+            await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", id), { texto: seq[i % seq.length] });
+        }
+        location.reload();
+    });
+
+    // ... [Aquí iría tu función renderCalendarioCompleto y listeners de eventos] ...
+    onAuthStateChanged(auth, user => { if(user) currentUser = user; });
 </script>
+</body>
+</html>
