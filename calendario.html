@@ -3,41 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horario Web - Mi Calendario</title>
+    <title>Horario Web - Mi Calendario 4x4</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #f8fafc; min-height: 100vh; padding: 20px; color: #1e293b; }
-        header { max-width: 900px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        h1 { font-size: 22px; color: #4f46e5; }
-        .logout-btn { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        /* 1. Variables Globales y Paleta de Colores (Modo Oscuro) */
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            
+            --dia-color: #f59e0b;
+            --noche-color: #3b82f6;
+            --extra-color: #10b981;
+            --libre-color: #475569;
+        }
+
+        /* 2. Tipografía y Estilos Generales */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            padding: 20px; 
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Cabecera de usuario */
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--card-bg); 
+            padding: 16px 24px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color);
+        }
+
+        h1 { 
+            font-size: 24px; 
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logout-btn { 
+            padding: 8px 16px; 
+            background: #ef4444; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: background 0.2s;
+        }
         .logout-btn:hover { background: #dc2626; }
-        .calendar-container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 20px; }
-        .day-header { font-weight: 600; text-align: center; color: #64748b; padding: 10px 0; border-bottom: 2px solid #e2e8f0; }
-        .day-cell { background: #f1f5f9; min-height: 120px; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; transition: background 0.2s; }
-        .day-cell:hover { background: #e2e8f0; }
-        .day-number { font-weight: 600; color: #475569; margin-bottom: 5px; }
-        textarea { width: 100%; flex-grow: 1; border: none; background: transparent; resize: none; font-size: 13px; outline: none; color: #334155; }
-        .save-status { text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+        /* Cabecera del Calendario */
+        .calendar-header { 
+            background: var(--card-bg);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 16px 16px 0 0;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+        }
+
+        .calendar-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* Leyenda */
+        .leyenda {
+            background: var(--card-bg);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .leyenda-item { display: flex; align-items: center; gap: 8px; }
+        .box { width: 16px; height: 16px; border-radius: 4px; }
+        .box.dia { background-color: var(--dia-color); }
+        .box.noche { background-color: var(--noche-color); }
+        .box.extra { background-color: var(--extra-color); }
+        .box.libre { background-color: var(--libre-color); }
+
+        /* 4. La Cuadrícula del Calendario */
+        .calendar-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 8px; 
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 0 0 16px 16px;
+            border: 1px solid var(--border-color);
+            border-top: none;
+        }
+
+        .weekday { 
+            text-transform: uppercase; 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-align: center; 
+            color: var(--text-muted); 
+            padding: 8px 0; 
+        }
+
+        /* Fines de semana destacados en rojo sutil */
+        .weekday:nth-child(6), .weekday:nth-child(7) {
+            color: #f43f5e;
+        }
+
+        /* Celdas de los Días */
+        .day-cell { 
+            background: var(--card-bg); 
+            min-height: 120px; 
+            border-radius: 10px; 
+            padding: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            border: 1px solid var(--border-color);
+            position: relative;
+            transition: transform 0.15s, background-color 0.2s;
+        }
+        .day-cell:hover {
+            transform: translateY(-2px);
+        }
+
+        .day-number { 
+            font-size: 14px; 
+            font-weight: 700; 
+            color: var(--text-muted); 
+            align-self: flex-start;
+        }
+
+        /* Espacio central: Icono y horas */
+        .center-space {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            gap: 4px;
+            margin: 4px 0;
+        }
+
+        .turno-icon {
+            font-size: 24px;
+        }
+
+        .turno-hours {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        /* Selector integrado inferior */
+        .select-turno { 
+            width: 100%; 
+            padding: 6px; 
+            background: #0f172a; 
+            color: var(--text-main); 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-weight: 600;
+            outline: none; 
+            cursor: pointer;
+        }
+
+        /* Clases de estado dinámicas aplicadas por JavaScript */
+        .day-cell.state-dia { background-color: var(--dia-color); }
+        .day-cell.state-dia .day-number, .day-cell.state-dia .turno-hours { color: #1e293b; }
+        .day-cell.state-dia .select-turno { background: rgba(255, 255, 255, 0.25); color: #1e293b; border-color: rgba(0,0,0,0.1); }
+
+        .day-cell.state-noche { background-color: var(--noche-color); }
+        .day-cell.state-noche .day-number, .day-cell.state-noche .turno-hours { color: var(--text-main); }
+        .day-cell.state-noche .select-turno { background: rgba(0, 0, 0, 0.3); color: var(--text-main); border-color: rgba(255,255,255,0.1); }
+
+        .day-cell.state-extra { background-color: var(--extra-color); }
+        .day-cell.state-extra .day-number, .day-cell.state-extra .turno-hours { color: var(--text-main); }
+        .day-cell.state-extra .select-turno { background: rgba(0, 0, 0, 0.3); color: var(--text-main); border-color: rgba(255,255,255,0.1); }
+
+        .day-cell.state-libre { background-color: var(--libre-color); }
+        .day-cell.state-libre .day-number, .day-cell.state-libre .turno-hours { color: var(--text-main); }
+        .day-cell.state-libre .select-turno { background: rgba(0, 0, 0, 0.3); color: var(--text-main); border-color: rgba(255,255,255,0.1); }
+
+        /* Estado global de Guardado en la esquina superior */
+        .save-status {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* 5. Adaptabilidad Móvil (Responsive Design) */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .day-cell { min-height: 100px; padding: 6px; }
+            .turno-icon { font-size: 20px; }
+            .turno-hours { font-size: 10px; }
+            .select-turno { font-size: 11px; padding: 4px; }
+        }
     </style>
 </head>
 <body>
 
-<header>
-    <h1 id="welcomeMessage">Cargando...</h1>
-    <button class="logout-btn" id="logoutBtn">Cerrar Sesión</button>
-</header>
+<div class="main-container">
+    <header>
+        <h1 id="welcomeMessage">Cargando...</h1>
+        <div class="save-status" id="globalCloudStatus">☁️ Sincronizado</div>
+        <button class="logout-btn" id="logoutBtn">Cerrar Sesión</button>
+    </header>
 
-<div class="calendar-container">
-    <h2 style="text-align: center; color: #334155;">Vista Mensual</h2>
-    <div class="grid" id="calendarGrid">
-        <div class="day-header">Lun</div>
-        <div class="day-header">Mar</div>
-        <div class="day-header">Mié</div>
-        <div class="day-header">Jue</div>
-        <div class="day-header">Vie</div>
-        <div class="day-header">Sáb</div>
-        <div class="day-header">Dom</div>
+    <div>
+        <div class="calendar-header">
+            <h2>Vista Mensual</h2>
+        </div>
+
+        <div class="leyenda">
+            <div class="leyenda-item"><div class="box dia"></div> <span>Día (8:00 - 20:00)</span></div>
+            <div class="leyenda-item"><div class="box noche"></div> <span>Noche (20:00 - 8:00)</span></div>
+            <div class="leyenda-item"><div class="box extra"></div> <span>Extra</span></div>
+            <div class="leyenda-item"><div class="box libre"></div> <span>Libre</span></div>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="weekday">Lun</div>
+            <div class="weekday">Mar</div>
+            <div class="weekday">Mié</div>
+            <div class="weekday">Jue</div>
+            <div class="weekday">Vie</div>
+            <div class="weekday">Sáb</div>
+            <div class="weekday">Dom</div>
+        </div>
     </div>
 </div>
 
@@ -61,6 +286,15 @@
     const db = getFirestore(app);
 
     let currentUser = null;
+
+    // Configuración visual por cada tipo de guardia
+    const infoTurnos = {
+        "":  { icon: "❓", horas: "Sin asignar", class: "" },
+        "D": { icon: "☀️", horas: "08:00 - 20:00", class: "state-dia" },
+        "N": { icon: "🌙", horas: "20:00 - 08:00", class: "state-noche" },
+        "E": { icon: "⭐", horas: "Turno Extra", class: "state-extra" },
+        "L": { icon: "💤", horas: "Descanso", class: "state-libre" }
+    };
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -87,36 +321,69 @@
             number.className = 'day-number';
             number.textContent = i;
             
-            const textarea = document.createElement('textarea');
-            textarea.placeholder = "Escribe tu turno...";
-            textarea.id = `day-${i}`;
+            const centerSpace = document.createElement('div');
+            centerSpace.className = 'center-space';
             
-            const status = document.createElement('div');
-            status.className = 'save-status';
-            status.id = `status-${i}`;
-            status.textContent = "Sin cambios";
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'turno-icon';
+            iconSpan.textContent = infoTurnos[""].icon;
+            
+            const hoursSpan = document.createElement('span');
+            hoursSpan.className = 'turno-hours';
+            hoursSpan.textContent = infoTurnos[""].horas;
+            
+            centerSpace.appendChild(iconSpan);
+            centerSpace.appendChild(hoursSpan);
+
+            const select = document.createElement('select');
+            select.className = 'select-turno';
+            select.innerHTML = `
+                <option value="">Seleccionar...</option>
+                <option value="D">☀️ Día</option>
+                <option value="N">🌙 Noche</option>
+                <option value="E">⭐ Extra</option>
+                <option value="L">💤 Libre</option>
+            `;
             
             cell.appendChild(number);
-            cell.appendChild(textarea);
-            cell.appendChild(status);
+            cell.appendChild(centerSpace);
+            cell.appendChild(select);
             grid.appendChild(cell);
 
+            // Mantenemos la estructura exacta de rutas que tenías antes: `dia_1`, `dia_2`, etc.
             const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`);
             getDoc(docRef).then((docSnap) => {
                 if (docSnap.exists()) {
-                    textarea.value = docSnap.data().texto || "";
-                    status.textContent = "Guardado en nube";
+                    const valorTurno = docSnap.data().texto || "";
+                    select.value = valorTurno;
+                    actualizarEstilosCelda(cell, iconSpan, hoursSpan, valorTurno);
                 }
             });
 
-            textarea.addEventListener('blur', () => {
-                status.textContent = "Guardando...";
+            // Al cambiar el selector, se guarda de inmediato y se actualizan los colores
+            select.addEventListener('change', () => {
+                const globalCloud = document.getElementById('globalCloudStatus');
+                globalCloud.textContent = "⏳ Guardando...";
+                
+                const valorSeleccionado = select.value;
+                actualizarEstilosCelda(cell, iconSpan, hoursSpan, valorSeleccionado);
+
                 setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", `dia_${i}`), {
-                    texto: textarea.value
+                    texto: valorSeleccionado
                 })
-                .then(() => { status.textContent = "Guardado en nube"; })
-                .catch(() => { status.textContent = "Error al guardar"; });
+                .then(() => { globalCloud.textContent = "☁️ Guardado en nube"; })
+                .catch(() => { globalCloud.textContent = "❌ Error"; });
             });
+        }
+    }
+
+    function actualizarEstilosCelda(celda, icono, horas, estado) {
+        celda.classList.remove('state-dia', 'state-noche', 'state-extra', 'state-libre');
+        const info = infoTurnos[estado] || infoTurnos[""];
+        icono.textContent = info.icon;
+        horas.textContent = info.horas;
+        if (info.class) {
+            celda.classList.add(info.class);
         }
     }
 </script>
