@@ -490,21 +490,30 @@
         <button class="auto-btn" id="autoCompletarBtn">Aplicar Secuencia</button>
     </div>
 
-    <div class="hours-summary">
-        <h3>📊 Resumen de Horas (Mes de Pago)</h3>
-        <div class="summary-card" id="horasNormalesCard">
-            <span id="horasNormales">Normales: 0 h 00 min</span>
-            <span class="summary-subtext" id="periodoNormales">Del 1 al 31</span>
-        </div>
-        <div class="summary-card" id="horasExtrasCard">
-            <span id="horasExtras">Extras: 0 h 00 min</span>
-            <span class="summary-subtext" id="periodoExtras">Calculando periodo...</span>
-        </div>
-        <div class="summary-card" style="border-color: var(--accent-primary);">
-            <span>💵 Total Horas</span>
-            <span class="summary-subtext" style="color: var(--text-primary);" id="totalCombinado">0 h 00 min</span>
+    
+<div class="hours-summary" id="resumenSection" style="grid-template-columns:1fr 1fr;gap:20px;">
+    <div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);padding:18px;border-radius:14px;">
+        <h3 style="margin-bottom:12px;">📅 Horas Normales (Automático)</h3>
+        <div id="displayHorasNormales" style="font-size:22px;font-weight:700;text-align:center;">0 h</div>
+        <div id="periodoNormales" class="summary-subtext" style="text-align:center;margin-top:8px;">
+            Mes calendario actual
         </div>
     </div>
+
+    <div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);padding:18px;border-radius:14px;">
+        <h3 style="margin-bottom:12px;">⏰ Horas Extras (Manual)</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">
+            <input type="date" id="inputCorteInicio" class="modal-input" style="max-width:160px;">
+            <input type="date" id="inputCorteFin" class="modal-input" style="max-width:160px;">
+            <button class="auto-btn" id="btnCalcularManual">Calcular</button>
+        </div>
+        <div id="displayHorasExtras" style="font-size:22px;font-weight:700;text-align:center;">0 h</div>
+        <div id="periodoSeleccionado" class="summary-subtext" style="text-align:center;margin-top:8px;">
+            Selecciona un rango
+        </div>
+    </div>
+</div>
+
 
     <div class="calendar-wrapper">
         <div class="calendar-header-nav">
@@ -860,7 +869,7 @@
         await calcularResumenPeriodo();
     }
 
-    function abrirModal(nombreDia, numeroDia, turnoActual, horasActuales) {
+   function abrirModal(nombreDia, numeroDia, turnoActual, horasActuales) {
         document.getElementById('modalDateTitle').textContent = `${nombreDia} ${numeroDia}`;
         const info = infoTurnos[turnoActual] || infoTurnos[""];
 
@@ -886,22 +895,91 @@
         horaInicioInput.value = inicio;
         horaFinInput.value = fin;
 
+        // Bloqueo si el turno cargado es "L"
+        const esDescanso = turnoActual === 'L';
+        horaInicioInput.disabled = esDescanso;
+        horaFinInput.disabled = esDescanso;
+
         viewContainer.style.display = "block";
         editContainer.style.display = "none";
         modal.classList.add('active');
     }
 
-    function actualizarHorasPorTurnoSeleccionado() {
-        const estado = selectModal.value;
-        if (estado && infoTurnos[estado] && infoTurnos[estado].horas.includes(" - ")) {
-            const partes = infoTurnos[estado].horas.split(" - ");
-            horaInicioInput.value = partes[0];
-            horaFinInput.value = partes[1];
-        } else if (estado === "L" || estado === "") {
-            horaInicioInput.value = "00:00";
-            horaFinInput.value = "00:00";
-        }
+    function guardarConfiguracionPeriodo() {
+    localStorage.setItem(
+        'corteInicio',
+        document.getElementById('inputCorteInicio').value
+    );
+
+    localStorage.setItem(
+        'corteFin',
+        document.getElementById('inputCorteFin').value
+    );
+}
+// --- LÓGICA DE CÁLCULO MANUAL ---
+    function realizarCalculoManual() {
+        const inicioVal = document.getElementById('inputCorteInicio').value;
+        const finVal = document.getElementById('inputCorteFin').value;
+        if (!inicioVal || !finVal) return;
+
+        const inicio = new Date(inicioVal + "T00:00:00");
+        const fin = new Date(finVal + "T00:00:00");
+        let totalExtras = 0;
+
+        document.querySelectorAll('.day-cell').forEach(cell => {
+            const id = cell.id.replace('cell-', '');
+            if (!id.includes('-')) return;
+            const fecha = new Date(id + "T00:00:00");
+            if (fecha >= inicio && fecha <= fin && cell.dataset.turno === 'E') {
+                totalExtras += 8; 
+            }
+        });
+
+        document.getElementById('displayHorasExtras').textContent = `Horas extras: ${totalExtras} horas`;
+        document.getElementById('periodoSeleccionado').textContent = `Periodo: ${inicio.toLocaleDateString()} al ${fin.toLocaleDateString()}`;
+        localStorage.setItem('corteInicio', inicioVal);
+        localStorage.setItem('corteFin', finVal);
+
+        guardarConfiguracionPeriodo();
     }
+
+    // --- INICIALIZACIÓN Y EVENTOS RESTANTES ---
+    document.getElementById('btnCalcularManual').addEventListener('click', realizarCalculoManual);
+    
+    window.addEventListener('DOMContentLoaded', () => {
+    const inicio = localStorage.getItem('corteInicio');
+    const fin = localStorage.getItem('corteFin');
+
+    if (inicio) {
+        document.getElementById('inputCorteInicio').value = inicio;
+    }
+
+    if (fin) {
+        document.getElementById('inputCorteFin').value = fin;
+    }
+
+    if (inicio && fin) {
+        setTimeout(() => {
+            realizarCalculoManual();
+        }, 500);
+    }
+});
+    function actualizarHorasPorTurnoSeleccionado() {
+    const estado = selectModal.value;
+    const esDescanso = estado === 'L';
+
+    horaInicioInput.disabled = esDescanso;
+    horaFinInput.disabled = esDescanso;
+
+    if (estado && infoTurnos[estado] && infoTurnos[estado].horas.includes(" - ")) {
+        const partes = infoTurnos[estado].horas.split(" - ");
+        horaInicioInput.value = partes[0];
+        horaFinInput.value = partes[1];
+    } else if (estado === "L" || estado === "") {
+        horaInicioInput.value = "00:00";
+        horaFinInput.value = "00:00";
+    }
+}
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
