@@ -182,6 +182,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .summary-subtext {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 500;
         }
 
         .calendar-wrapper {
@@ -483,10 +491,19 @@
     </div>
 
     <div class="hours-summary">
-        <h3>📊 Resumen de Horas</h3>
-        <div class="summary-card" id="horasNormales">Horas normales: 0 h 00 min</div>
-        <div class="summary-card" id="horasExtras">Horas extras: 0 h 00 min</div>
-        <div class="summary-card" id="periodoExtras">Período de cálculo</div>
+        <h3>📊 Resumen de Horas (Mes de Pago)</h3>
+        <div class="summary-card" id="horasNormalesCard">
+            <span id="horasNormales">Normales: 0 h 00 min</span>
+            <span class="summary-subtext" id="periodoNormales">Del 1 al 31</span>
+        </div>
+        <div class="summary-card" id="horasExtrasCard">
+            <span id="horasExtras">Extras: 0 h 00 min</span>
+            <span class="summary-subtext" id="periodoExtras">Calculando periodo...</span>
+        </div>
+        <div class="summary-card" style="border-color: var(--accent-primary);">
+            <span>💵 Total Horas</span>
+            <span class="summary-subtext" style="color: var(--text-primary);" id="totalCombinado">0 h 00 min</span>
+        </div>
     </div>
 
     <div class="calendar-wrapper">
@@ -515,7 +532,7 @@
     </div>
 
     <div class="bottom-actions-zone">
-        <button class="btn-danger-outline" id="btnEliminarTodo">🗑️ Eliminar Horario Completo</button>
+        <button class="btn-danger-outline" id="btnEliminarTodo">🗑️ Eliminar Horario</button>
     </div>
 </div>
 
@@ -569,7 +586,7 @@
     <div class="modal-content">
         <h3 style="margin-bottom:15px;">⚠️ Confirmar eliminación</h3>
         <p style="color:var(--text-secondary); margin-bottom:25px;">
-            ¿Deseas eliminar todo el horario?
+            ¿Deseas eliminar todo el horario? (180 días)
             Esta acción no se puede deshacer.
         </p>
         <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
@@ -659,7 +676,7 @@
         if (horasCustom && horasCustom.includes(' - ')) {
             return calcularHorasEntre(horasCustom);
         }
-        if (turno === 'D' || turno === 'N') return 12; // Modifica aquí si tu turno normal no es de 12 horas
+        if (turno === 'D' || turno === 'N') return 12; 
         return 0;
     }
 
@@ -675,10 +692,12 @@
         modal.classList.remove('active');
     }
 
+    // FUNCIÓN CORREGIDA: Obtiene el n-ésimo día de la semana sin fallar al cambiar de año
     function getNthDayOfMonth(year, month, dayOfWeek, n) {
         let d = new Date(year, month, 1);
+        let targetMonth = d.getMonth(); 
         let count = 0;
-        while (d.getMonth() === month) {
+        while (d.getMonth() === targetMonth) {
             if (d.getDay() === dayOfWeek) {
                 count++;
                 if (count === n) return new Date(d);
@@ -694,50 +713,72 @@
         const año = currentDate.getFullYear();
         const mes = currentDate.getMonth();
 
-        // Del 4to lunes del mes anterior, al 3er domingo del mes actual visualizado
-        const fechaInicio = getNthDayOfMonth(año, mes - 1, 1, 4); 
-        const fechaFin = getNthDayOfMonth(año, mes, 0, 3);
+        // 1. LIMITES HORAS NORMALES (Día 1 al último día del mes que estás viendo)
+        const inicioNormal = new Date(año, mes, 1);
+        const finNormal = new Date(año, mes + 1, 0);
 
-        if (!fechaInicio || !fechaFin) return;
+        // 2. LIMITES HORAS EXTRAS (4to Lunes del mes anterior al 3er Domingo del mes actual)
+        const inicioExtra = getNthDayOfMonth(año, mes - 1, 1, 4); 
+        const finExtra = getNthDayOfMonth(año, mes, 0, 3);
 
+        if (!inicioExtra || !finExtra) return;
+
+        // Actualizar los subtítulos en pantalla para que sepas qué está sumando
+        document.getElementById('periodoNormales').textContent = 
+            `Del ${inicioNormal.getDate()} al ${finNormal.getDate()} de ${currentDate.toLocaleDateString('es-ES', { month: 'short' })}`;
+        
         document.getElementById('periodoExtras').textContent = 
-            `${fechaInicio.toLocaleDateString('es-ES')} al ${fechaFin.toLocaleDateString('es-ES')}`;
+            `Desfasado: ${inicioExtra.getDate()}/${inicioExtra.getMonth()+1} al ${finExtra.getDate()}/${finExtra.getMonth()+1}`;
 
         let totalNormales = 0;
         let totalExtras = 0;
+
+        // Optimización: Solo recorremos desde la fecha más antigua a la más nueva
+        const minDate = inicioNormal < inicioExtra ? new Date(inicioNormal) : new Date(inicioExtra);
+        const maxDate = finNormal > finExtra ? new Date(finNormal) : new Date(finExtra);
+
         const tasks = [];
-        
-        let loopDate = new Date(fechaInicio);
-        
-        while (loopDate <= fechaFin) {
+        let loopDate = new Date(minDate);
+
+        while (loopDate <= maxDate) {
             const y = loopDate.getFullYear();
             const m = String(loopDate.getMonth() + 1).padStart(2, '0');
             const d = String(loopDate.getDate()).padStart(2, '0');
             const stringFechaClave = `${y}-${m}-${d}`;
 
-            const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
-            tasks.push(getDoc(docRef).then((docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const valorTurno = data.texto || "";
-                    const horasCustom = data.horasCustom || "";
-                    const horasCalculadas = obtenerHorasTurno(valorTurno, horasCustom);
+            // Verificamos si este día exacto pertenece al periodo Normal o Extra
+            const loopTime = loopDate.getTime();
+            const isNormal = loopTime >= inicioNormal.getTime() && loopTime <= finNormal.getTime();
+            const isExtra = loopTime >= inicioExtra.getTime() && loopTime <= finExtra.getTime();
 
-                    if (valorTurno === 'E') {
-                        totalExtras += horasCalculadas;
-                    } else if (valorTurno === 'D' || valorTurno === 'N') {
-                        totalNormales += horasCalculadas;
+            if (isNormal || isExtra) {
+                const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
+                tasks.push(getDoc(docRef).then((docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const valorTurno = data.texto || "";
+                        const horasCustom = data.horasCustom || "";
+                        const horasCalculadas = obtenerHorasTurno(valorTurno, horasCustom);
+
+                        // Si el día está dentro del ciclo desfasado y es E, se suma a Extras
+                        if (isExtra && valorTurno === 'E') {
+                            totalExtras += horasCalculadas;
+                        }
+                        // Si el día está dentro del mes calendario y es D o N, se suma a Normales
+                        if (isNormal && (valorTurno === 'D' || valorTurno === 'N')) {
+                            totalNormales += horasCalculadas;
+                        }
                     }
-                }
-            }).catch(() => {}));
-
+                }).catch(() => {}));
+            }
             loopDate.setDate(loopDate.getDate() + 1);
         }
 
         await Promise.all(tasks);
 
-        document.getElementById('horasNormales').textContent = `Horas normales: ${formatearHoras(totalNormales)}`;
-        document.getElementById('horasExtras').textContent = `Horas extras: ${formatearHoras(totalExtras)}`;
+        document.getElementById('horasNormales').textContent = `Normales: ${formatearHoras(totalNormales)}`;
+        document.getElementById('horasExtras').textContent = `Extras: ${formatearHoras(totalExtras)}`;
+        document.getElementById('totalCombinado').textContent = formatearHoras(totalNormales + totalExtras);
     }
 
     async function renderCalendarioCompleto() {
@@ -1019,30 +1060,27 @@
         const globalCloud = document.getElementById('globalCloudStatus');
         globalCloud.textContent = "⏳ Limpiando base de datos...";
 
-        // Se limpiarán los días visibles correspondientes al periodo calculado actualmente para evitar cruces
-        const año = currentDate.getFullYear();
-        const mes = currentDate.getMonth();
-        const fechaInicioBorrado = getNthDayOfMonth(año, mes - 1, 1, 4); 
-        const fechaFinBorrado = getNthDayOfMonth(año, mes + 1, 0, 3);
-
-        let loopDate = new Date(fechaInicioBorrado);
+        const fechaInicioBorrado = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const diasALimpiar = 180; // Se mantiene tu lógica original de limpieza a 180 días
 
         try {
-            while (loopDate <= fechaFinBorrado) {
-                const añoC = loopDate.getFullYear();
-                const mesC = String(loopDate.getMonth() + 1).padStart(2, '0');
-                const diaC = String(loopDate.getDate()).padStart(2, '0');
+            for (let paso = 0; paso < diasALimpiar; paso++) {
+                const fechaCiclo = new Date(fechaInicioBorrado.getTime());
+                fechaCiclo.setDate(fechaInicioBorrado.getDate() + paso);
+
+                const añoC = fechaCiclo.getFullYear();
+                const mesC = String(fechaCiclo.getMonth() + 1).padStart(2, '0');
+                const diaC = String(fechaCiclo.getDate()).padStart(2, '0');
                 const fechaClaveFirestore = `${añoC}-${mesC}-${diaC}`;
 
                 await setDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", fechaClaveFirestore), {
                     texto: "",
                     horasCustom: ""
                 });
-                loopDate.setDate(loopDate.getDate() + 1);
             }
 
             globalCloud.textContent = "☁️ Sincronizado";
-            showToast("Horario borrado en el periodo seleccionado.", "🗑️");
+            showToast("Horario eliminado con éxito.", "🗑️");
             await renderCalendarioCompleto();
         } catch (err) {
             console.error(err);
