@@ -302,17 +302,17 @@
 
         .calendar-header-nav {
 
-            padding: 24px 28px;
+    		padding: 24px 28px;
 
-            display: flex;
+    		display: grid;
 
-            justify-content: space-between;
+    		grid-template-columns: 60px 1fr 60px;
 
-            align-items: center;
+    		align-items: center;
 
-            border-bottom: 1px solid var(--border-subtle);
+    		border-bottom: 1px solid var(--border-subtle);
 
-        }
+	}
 
 
 
@@ -332,11 +332,9 @@
 
         .nav-buttons {
 
-            display: flex;
+    		display: contents;
 
-            gap: 8px;
-
-        }
+		}
 
 
 
@@ -840,6 +838,34 @@
 
         }
 
+	.hours-summary {
+
+    		background: var(--bg-surface);
+
+    		border: 1px solid var(--border-subtle);
+
+    		border-radius: 14px;
+
+    		padding: 20px;
+
+    		margin-top: 20px;
+
+	}
+
+	.hours-summary h3 {
+
+    		margin-bottom: 15px;
+
+	}
+
+	.hours-summary div {
+
+    		margin-bottom: 8px;
+
+    		color: var(--text-secondary);
+
+	}
+
     </style>
 
 </head>
@@ -876,13 +902,15 @@
 
             <select id="autoTipoPatron">
 
-                <option value="4x4_dia">☀️ 4x4 Solo Día</option>
+    		<option value="4x4_dia">☀️ 4x4 Solo Día</option>
 
-                <option value="4x4_noche">🌙 4x4 Solo Noche</option>
+    		<option value="4x4_noche">🌙 4x4 Solo Noche</option>
 
-                <option value="4x4_rotativo">🔄 4x4 Día y Noche</option>
+    		<option value="4x4_rotativo">🔄 4x4 Día y Noche</option>
 
-            </select>
+    		<option value="5x2_dia">🏢 5x2 Lunes a Viernes</option>
+
+		</select>
 
         </div>
 
@@ -892,21 +920,19 @@
 
 
 
-    <div class="calendar-wrapper">
+    	<div class="calendar-header-nav">
 
-        <div class="calendar-header-nav">
+    		<button class="nav-btn" id="btnPrevMonth">‹</button>
 
-            <h2 id="monthYearTitle">Mes Año</h2>
+    		<h2 id="monthYearTitle" style="text-align:center;">
+        		Mes Año
+    		</h2>
 
-            <div class="nav-buttons">
+    		<button class="nav-btn" id="btnNextMonth">
+        		›
+    		</button>
 
-                <button class="nav-btn" id="btnPrevMonth">‹</button>
-
-                <button class="nav-btn" id="btnNextMonth">›</button>
-
-            </div>
-
-        </div>
+	</div>
 
 
 
@@ -951,6 +977,23 @@
         <button class="btn-danger-outline" id="btnEliminarTodo">🗑️ Eliminar Horario Completo</button>
 
     </div>
+	<div class="hours-summary">
+
+    <h3>📊 Resumen de Horas</h3>
+
+    <div id="horasNormales">
+        Horas normales: 0
+    </div>
+
+    <div id="horasExtras">
+        Horas extras: 0
+    </div>
+
+    <div id="periodoExtras">
+        Período de cálculo
+    </div>
+
+</div>
 
 </div>
 
@@ -1010,19 +1053,25 @@
 
 
 
-            <label class="form-label">Hora Inicio</label>
-		<input
-    			type="time"
-    			class="modal-input"
-    			id="horaInicio"
-    			value="00:00">
+            <label class="form-label">
+		Hora Inicio
+	</label>
 
-	    <label class="form-label">Hora Fin</label>
-		<input
-   			type="time"
-    			class="modal-input"
-    			id="horaFin"
-    			value="00:00">
+	<input
+	    type="time"
+	    class="modal-input"
+	    id="horaInicio"
+	    value="00:00">
+
+	<label class="form-label">
+	Hora Fin
+	</label>
+
+	<input
+	    type="time"
+	    class="modal-input"
+	    id="horaFin"
+	    value="00:00">
 
 
             <div class="modal-actions-layout" style="margin-top: 28px;">
@@ -1571,20 +1620,26 @@
 
         let secuenciaBase = [];
 
-        if (tipoPatron === "4x4_dia") { 
+	if (tipoPatron === "4x4_dia") {
 
-            secuenciaBase = ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L']; 
+    		secuenciaBase = ['D','D','D','D','L','L','L','L'];
 
-        } else if (tipoPatron === "4x4_noche") { 
+	}
+	else if (tipoPatron === "4x4_noche") {
 
-            secuenciaBase = ['N', 'N', 'N', 'N', 'L', 'L', 'L', 'L']; 
+    		secuenciaBase = ['N','N','N','N','L','L','L','L'];
 
-        } else if (tipoPatron === "4x4_rotativo") { 
+	}
+	else if (tipoPatron === "4x4_rotativo") {
 
-            secuenciaBase = ['D', 'D', 'D', 'D', 'L', 'L', 'L', 'L', 'N', 'N', 'N', 'N', 'L', 'L', 'L', 'L']; 
+    		secuenciaBase = [
+        		'D','D','D','D',
+        		'L','L','L','L',
+        		'N','N','N','N',
+        		'L','L','L','L'
+    		];
 
-        }
-
+	}
 
 
         const fechaOrigen = new Date(fechaStringInput + "T00:00:00");
@@ -1601,9 +1656,29 @@
 
 
 
-            const indiceCalculado = paso % secuenciaBase.length;
+                let turnoAsignado;
 
-            const turnoAsignado = secuenciaBase[indiceCalculado];
+		if (tipoPatron === "5x2_dia") {
+
+    			const diaSemana = fechaCiclo.getDay();
+
+    			if (diaSemana >= 1 && diaSemana <= 5) {
+
+        			turnoAsignado = 'D';
+
+    			} else {
+
+        			turnoAsignado = 'L';
+
+    			}
+
+		} else {
+
+    			const indiceCalculado = paso % secuenciaBase.length;
+
+    			turnoAsignado = secuenciaBase[indiceCalculado];
+
+		}
 
 
 
