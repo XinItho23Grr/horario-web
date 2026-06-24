@@ -236,17 +236,17 @@
         }
 
         .leyenda {
-            padding: 14px 24px;
-            display: flex;
-            justify-content: center;
-            gap: 18px;
-            background: rgba(15, 23, 42, 0.3);
-            border-bottom: 1px solid var(--border-subtle);
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            flex-wrap: wrap;
-        }
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 8px; /* Reducido de 18px */
+    background: rgba(15, 23, 42, 0.3);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 10px; /* Reducido de 12px */
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
 
         .leyenda-item {
             display: flex;
@@ -455,14 +455,20 @@
         .toast-notification.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
         @media (max-width: 768px) {
-            body { padding: 12px; }
-            .auto-panel, .panel-group { flex-direction: column; align-items: stretch; gap: 14px; }
-            .auto-btn { width: 100%; text-align: center; }
-            .calendar-header-nav { padding: 16px; }
-            .day-cell { min-height: 84px; padding: 8px; }
-            .hours-summary { grid-template-columns: repeat(1, 1fr); gap: 10px; padding: 16px; }
-            .bottom-actions-zone { justify-content: center; }
-        }
+    body { padding: 10px; }
+    .auto-panel, .panel-group { flex-direction: column; align-items: stretch; gap: 14px; }
+    .auto-btn { width: 100%; text-align: center; }
+    .calendar-header-nav { padding: 12px; }
+    
+    /* AJUSTES CRÍTICOS PARA EL CALENDARIO */
+    .day-cell { min-height: 60px; padding: 4px; }
+    .day-number { font-size: 11px; }
+    .turno-icon { font-size: 16px; margin: 0; }
+    .turno-hours { font-size: 8px; display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    
+    .hours-summary { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
+    .bottom-actions-zone { justify-content: center; }
+}
     </style>
 </head>
 
