@@ -490,20 +490,30 @@
         <button class="auto-btn" id="autoCompletarBtn">Aplicar Secuencia</button>
     </div>
 
-    <div class="hours-summary" id="resumenSection">
-        <h3>📊 Resumen de Horas</h3>
-        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; justify-content:center; flex-wrap:wrap;">
-            <input type="date" id="inputCorteInicio" class="modal-input" style="width:150px;">
-            <span style="color:var(--text-secondary)">al</span>
-            <input type="date" id="inputCorteFin" class="modal-input" style="width:150px;">
-            <button class="auto-btn" id="btnCalcularManual" style="padding: 10px 15px;">Calcular</button>
-        </div>
-        <div id="displayHorasNormales" style="text-align:center;">Horas normales: 0</div>
-        <div id="displayHorasExtras" style="text-align:center;">Horas extras: 0</div>
-        <div id="periodoSeleccionado" style="font-size: 11px; color: var(--text-secondary); margin-top: 10px; text-align:center;">
-            Periodo: Selecciona fechas y calcula
+    
+<div class="hours-summary" id="resumenSection" style="grid-template-columns:1fr 1fr;gap:20px;">
+    <div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);padding:18px;border-radius:14px;">
+        <h3 style="margin-bottom:12px;">📅 Horas Normales (Automático)</h3>
+        <div id="displayHorasNormales" style="font-size:22px;font-weight:700;text-align:center;">0 h</div>
+        <div id="periodoNormales" class="summary-subtext" style="text-align:center;margin-top:8px;">
+            Mes calendario actual
         </div>
     </div>
+
+    <div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);padding:18px;border-radius:14px;">
+        <h3 style="margin-bottom:12px;">⏰ Horas Extras (Manual)</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">
+            <input type="date" id="inputCorteInicio" class="modal-input" style="max-width:160px;">
+            <input type="date" id="inputCorteFin" class="modal-input" style="max-width:160px;">
+            <button class="auto-btn" id="btnCalcularManual">Calcular</button>
+        </div>
+        <div id="displayHorasExtras" style="font-size:22px;font-weight:700;text-align:center;">0 h</div>
+        <div id="periodoSeleccionado" class="summary-subtext" style="text-align:center;margin-top:8px;">
+            Selecciona un rango
+        </div>
+    </div>
+</div>
+
 
     <div class="calendar-wrapper">
         <div class="calendar-header-nav">
