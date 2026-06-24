@@ -716,79 +716,74 @@
         return null;
     }
 
-    async function calcularResumenPeriodo() {
-        if (!currentUser) return;
+async function calcularResumenPeriodo() {
+    if (!currentUser) return;
 
-        const año = currentDate.getFullYear();
-        const mes = currentDate.getMonth();
+    const año = currentDate.getFullYear();
+    const mes = currentDate.getMonth();
 
-        // 1. LIMITES HORAS NORMALES (Día 1 al último día del mes que estás viendo)
-        const inicioNormal = new Date(año, mes, 1);
-        const finNormal = new Date(año, mes + 1, 0);
+    // 1. LÍMITES HORAS NORMALES (Mes calendario actual)
+    const inicioNormal = new Date(año, mes, 1);
+    const finNormal = new Date(año, mes + 1, 0);
 
-        // 2. LIMITES HORAS EXTRAS (4to Lunes del mes anterior al 3er Domingo del mes actual)
-        const inicioExtra = getNthDayOfMonth(año, mes - 1, 1, 4); 
-        const finExtra = getNthDayOfMonth(año, mes, 0, 3);
+    // 2. LÍMITES HORAS EXTRAS (Corte desfasado)
+    const inicioExtra = getNthDayOfMonth(año, mes - 1, 1, 4); 
+    const finExtra = getNthDayOfMonth(año, mes, 0, 3);
 
-        if (!inicioExtra || !finExtra) return;
+    if (!inicioExtra || !finExtra) return;
 
-        // Actualizar los subtítulos en pantalla para que sepas qué está sumando
-        document.getElementById('periodoNormales').textContent = 
-            `Del ${inicioNormal.getDate()} al ${finNormal.getDate()} de ${currentDate.toLocaleDateString('es-ES', { month: 'short' })}`;
-        
-        document.getElementById('periodoExtras').textContent = 
-            `Desfasado: ${inicioExtra.getDate()}/${inicioExtra.getMonth()+1} al ${finExtra.getDate()}/${finExtra.getMonth()+1}`;
+    // Actualización de textos informativos (asegúrate de tener estos IDs en tu HTML)
+    const labelNormales = document.getElementById('periodoNormales');
+    const labelExtras = document.getElementById('periodoExtras');
+    if (labelNormales) labelNormales.textContent = `Del ${inicioNormal.getDate()} al ${finNormal.getDate()} de ${currentDate.toLocaleDateString('es-ES', { month: 'short' })}`;
+    if (labelExtras) labelExtras.textContent = `Extras: ${inicioExtra.getDate()}/${inicioExtra.getMonth()+1} al ${finExtra.getDate()}/${finExtra.getMonth()+1}`;
 
-        let totalNormales = 0;
-        let totalExtras = 0;
+    let totalNormales = 0;
+    let totalExtras = 0;
 
-        // Optimización: Solo recorremos desde la fecha más antigua a la más nueva
-        const minDate = inicioNormal < inicioExtra ? new Date(inicioNormal) : new Date(inicioExtra);
-        const maxDate = finNormal > finExtra ? new Date(finNormal) : new Date(finExtra);
+    const minDate = inicioNormal < inicioExtra ? new Date(inicioNormal) : new Date(inicioExtra);
+    const maxDate = finNormal > finExtra ? new Date(finNormal) : new Date(finExtra);
 
-        const tasks = [];
-        let loopDate = new Date(minDate);
+    const tasks = [];
+    let loopDate = new Date(minDate);
 
-        while (loopDate <= maxDate) {
-            const y = loopDate.getFullYear();
-            const m = String(loopDate.getMonth() + 1).padStart(2, '0');
-            const d = String(loopDate.getDate()).padStart(2, '0');
-            const stringFechaClave = `${y}-${m}-${d}`;
+    while (loopDate <= maxDate) {
+        const y = loopDate.getFullYear();
+        const m = String(loopDate.getMonth() + 1).padStart(2, '0');
+        const d = String(loopDate.getDate()).padStart(2, '0');
+        const stringFechaClave = `${y}-${m}-${d}`;
 
-            // Verificamos si este día exacto pertenece al periodo Normal o Extra
-            const loopTime = loopDate.getTime();
-            const isNormal = loopTime >= inicioNormal.getTime() && loopTime <= finNormal.getTime();
-            const isExtra = loopTime >= inicioExtra.getTime() && loopTime <= finExtra.getTime();
+        const loopTime = loopDate.getTime();
+        const isNormal = loopTime >= inicioNormal.getTime() && loopTime <= finNormal.getTime();
+        const isExtra = loopTime >= inicioExtra.getTime() && loopTime <= finExtra.getTime();
 
-            if (isNormal || isExtra) {
-                const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
-                tasks.push(getDoc(docRef).then((docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        const valorTurno = data.texto || "";
-                        const horasCustom = data.horasCustom || "";
-                        const horasCalculadas = obtenerHorasTurno(valorTurno, horasCustom);
+        if (isNormal || isExtra) {
+            const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
+            tasks.push(getDoc(docRef).then((docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const valorTurno = data.texto || "";
+                    const horasCustom = data.horasCustom || "";
+                    const horasCalculadas = obtenerHorasTurno(valorTurno, horasCustom);
 
-                        // Si el día está dentro del ciclo desfasado y es E, se suma a Extras
-                        if (isExtra && valorTurno === 'E') {
-                            totalExtras += horasCalculadas;
-                        }
-                        // Si el día está dentro del mes calendario y es D o N, se suma a Normales
-                        if (isNormal && (valorTurno === 'D' || valorTurno === 'N')) {
-                            totalNormales += horasCalculadas;
-                        }
+                    if (isExtra && valorTurno === 'E') {
+                        totalExtras += horasCalculadas;
                     }
-                }).catch(() => {}));
-            }
-            loopDate.setDate(loopDate.getDate() + 1);
+                    if (isNormal && (valorTurno === 'D' || valorTurno === 'N')) {
+                        totalNormales += horasCalculadas;
+                    }
+                }
+            }).catch(() => {}));
         }
-
-        await Promise.all(tasks);
-
-        document.getElementById('horasNormales').textContent = `Normales: ${formatearHoras(totalNormales)}`;
-        document.getElementById('horasExtras').textContent = `Extras: ${formatearHoras(totalExtras)}`;
-        document.getElementById('totalCombinado').textContent = formatearHoras(totalNormales + totalExtras);
+        loopDate.setDate(loopDate.getDate() + 1);
     }
+
+    await Promise.all(tasks);
+
+    // Actualización final de los contadores en el DOM
+    document.getElementById('displayHorasNormales').textContent = formatearHoras(totalNormales);
+    document.getElementById('displayHorasExtras').textContent = formatearHoras(totalExtras);
+}
 
     async function renderCalendarioCompleto() {
         if (!currentUser) return;
