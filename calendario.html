@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Horario Web - Gestión de Turnos Profesional</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         :root {
@@ -546,7 +547,9 @@
         </div>
     </div>
 
+    
     <div class="bottom-actions-zone">
+        <button class="btn-danger-outline" id="btnExportarPdf" style="margin-right: 15px; border-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.1);">📥 Exportar PDF</button>
         <button class="btn-danger-outline" id="btnEliminarTodo">🗑️ Eliminar Horario</button>
     </div>
 </div>
@@ -722,82 +725,74 @@
         return null;
     }
 
-// --- COPIA ESTO Y REEMPLAZA TU BLOQUE DE SCRIPT ANTERIOR ---
-
-// 1. Mantenemos las funciones de cálculo separadas
-async function calcularHorasNormales(año, mes) {
-    const finNormal = new Date(año, mes + 1, 0);
-    let totalNormales = 0;
-    const tasks = [];
-
-    for (let d = 1; d <= finNormal.getDate(); d++) {
-        const stringFechaClave = `${año}-${String(mes + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        tasks.push(getDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave)).then(snap => {
-            if (snap.exists() && (snap.data().texto === 'D' || snap.data().texto === 'N')) {
-                totalNormales += obtenerHorasTurno(snap.data().texto, snap.data().horasCustom);
-            }
-        }));
-    }
-    await Promise.all(tasks);
-    document.getElementById('displayHorasNormales').textContent = formatearHoras(totalNormales);
-    document.getElementById('periodoNormales').textContent = `Del 1 al ${finNormal.getDate()} de ${currentDate.toLocaleDateString('es-ES', { month: 'short' })}`;
-}
-
-async function realizarCalculoManual() {
-    const inicioVal = document.getElementById('inputCorteInicio').value;
-    const finVal = document.getElementById('inputCorteFin').value;
-    if (!inicioVal || !finVal) return;
-
-    localStorage.setItem('corteInicio', inicioVal);
-    localStorage.setItem('corteFin', finVal);
-
-    const inicio = new Date(inicioVal + "T00:00:00");
-    const fin = new Date(finVal + "T00:00:00");
-    let totalExtras = 0;
-    const tasks = [];
-
-    let fechaIterador = new Date(inicio);
-    while (fechaIterador <= fin) {
-        const key = fechaIterador.toISOString().split('T')[0];
-        tasks.push(getDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", key)).then(snap => {
-            if (snap.exists() && snap.data().texto === 'E') {
-                totalExtras += obtenerHorasTurno(snap.data().texto, snap.data().horasCustom);
-            }
-        }));
-        fechaIterador.setDate(fechaIterador.getDate() + 1);
-    }
-    await Promise.all(tasks);
-    document.getElementById('displayHorasExtras').textContent = formatearHoras(totalExtras);
-    document.getElementById('periodoSeleccionado').textContent = `Del ${inicio.getDate()} al ${fin.getDate()}`;
-}
-
-// 2. Modificamos el renderizado para que llame a las funciones independientes
-async function renderCalendarioCompleto() {
+async function calcularResumenPeriodo() {
     if (!currentUser) return;
 
-    // A) Renderizar el grid (esta parte es la que visualiza los días)
-    const grid = document.getElementById('calendarGrid');
-    // ... [MANTEN AQUÍ TODO TU CÓDIGO ACTUAL DE RENDERIZADO DE CELDAS] ...
-    // (Asegúrate de no borrar la lógica que dibuja los cuadritos de los días)
+    const año = currentDate.getFullYear();
+    const mes = currentDate.getMonth();
 
-    // B) Actualizar totales
-    await calcularHorasNormales(currentDate.getFullYear(), currentDate.getMonth());
-    
-    // C) Si existen datos de extras, calcularlos para que se vean al cargar
-    if (localStorage.getItem('corteInicio')) {
-        await realizarCalculoManual();
+    // 1. LÍMITES HORAS NORMALES (Mes calendario actual)
+    const inicioNormal = new Date(año, mes, 1);
+    const finNormal = new Date(año, mes + 1, 0);
+
+    // 2. LÍMITES HORAS EXTRAS (Corte desfasado)
+    const inicioExtra = getNthDayOfMonth(año, mes - 1, 1, 4); 
+    const finExtra = getNthDayOfMonth(año, mes, 0, 3);
+
+    if (!inicioExtra || !finExtra) return;
+
+    // Actualización de textos informativos (asegúrate de tener estos IDs en tu HTML)
+    const labelNormales = document.getElementById('periodoNormales');
+    const labelExtras = document.getElementById('periodoExtras');
+    if (labelNormales) labelNormales.textContent = `Del ${inicioNormal.getDate()} al ${finNormal.getDate()} de ${currentDate.toLocaleDateString('es-ES', { month: 'short' })}`;
+    if (labelExtras) labelExtras.textContent = `Extras: ${inicioExtra.getDate()}/${inicioExtra.getMonth()+1} al ${finExtra.getDate()}/${finExtra.getMonth()+1}`;
+
+    let totalNormales = 0;
+    let totalExtras = 0;
+
+    const minDate = inicioNormal < inicioExtra ? new Date(inicioNormal) : new Date(inicioExtra);
+    const maxDate = finNormal > finExtra ? new Date(finNormal) : new Date(finExtra);
+
+    const tasks = [];
+    let loopDate = new Date(minDate);
+
+    while (loopDate <= maxDate) {
+        const y = loopDate.getFullYear();
+        const m = String(loopDate.getMonth() + 1).padStart(2, '0');
+        const d = String(loopDate.getDate()).padStart(2, '0');
+        const stringFechaClave = `${y}-${m}-${d}`;
+
+        const loopTime = loopDate.getTime();
+        const isNormal = loopTime >= inicioNormal.getTime() && loopTime <= finNormal.getTime();
+        const isExtra = loopTime >= inicioExtra.getTime() && loopTime <= finExtra.getTime();
+
+        if (isNormal || isExtra) {
+            const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
+            tasks.push(getDoc(docRef).then((docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const valorTurno = data.texto || "";
+                    const horasCustom = data.horasCustom || "";
+                    const horasCalculadas = obtenerHorasTurno(valorTurno, horasCustom);
+
+                    if (isExtra && valorTurno === 'E') {
+                        totalExtras += horasCalculadas;
+                    }
+                    if (isNormal && (valorTurno === 'D' || valorTurno === 'N')) {
+                        totalNormales += horasCalculadas;
+                    }
+                }
+            }).catch(() => {}));
+        }
+        loopDate.setDate(loopDate.getDate() + 1);
     }
-}
 
-// 3. Inicialización en el evento DOMContentLoaded
-window.addEventListener('DOMContentLoaded', () => {
-    const inicio = localStorage.getItem('corteInicio');
-    const fin = localStorage.getItem('corteFin');
-    if (inicio) document.getElementById('inputCorteInicio').value = inicio;
-    if (fin) document.getElementById('inputCorteFin').value = fin;
-    
-    // No disparamos el cálculo aquí, lo hará renderCalendarioCompleto tras cargar el usuario
-});
+    await Promise.all(tasks);
+
+    // Actualización final de los contadores en el DOM
+    document.getElementById('displayHorasNormales').textContent = formatearHoras(totalNormales);
+    document.getElementById('displayHorasExtras').textContent = formatearHoras(totalExtras);
+}
 
     async function renderCalendarioCompleto() {
         if (!currentUser) return;
@@ -925,54 +920,60 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('inputCorteFin').value
     );
 }
-// --- LÓGICA DE CÁLCULO MANUAL ---
-    function realizarCalculoManual() {
-        const inicioVal = document.getElementById('inputCorteInicio').value;
-        const finVal = document.getElementById('inputCorteFin').value;
-        if (!inicioVal || !finVal) return;
-
-        const inicio = new Date(inicioVal + "T00:00:00");
-        const fin = new Date(finVal + "T00:00:00");
-        let totalExtras = 0;
-
-        document.querySelectorAll('.day-cell').forEach(cell => {
-            const id = cell.id.replace('cell-', '');
-            if (!id.includes('-')) return;
-            const fecha = new Date(id + "T00:00:00");
-            if (fecha >= inicio && fecha <= fin && cell.dataset.turno === 'E') {
-                totalExtras += 8; 
-            }
-        });
-
-        document.getElementById('displayHorasExtras').textContent = `Horas extras: ${totalExtras} horas`;
-        document.getElementById('periodoSeleccionado').textContent = `Periodo: ${inicio.toLocaleDateString()} al ${fin.toLocaleDateString()}`;
-        localStorage.setItem('corteInicio', inicioVal);
-        localStorage.setItem('corteFin', finVal);
-
-        guardarConfiguracionPeriodo();
-    }
-
-    // --- INICIALIZACIÓN Y EVENTOS RESTANTES ---
-    document.getElementById('btnCalcularManual').addEventListener('click', realizarCalculoManual);
+// --- LÓGICA DE CÁLCULO MANUAL (Copia y reemplaza tu función actual) ---
+async function realizarCalculoManual() {
+    const inicioVal = document.getElementById('inputCorteInicio').value;
+    const finVal = document.getElementById('inputCorteFin').value;
     
-    window.addEventListener('DOMContentLoaded', () => {
-    const inicio = localStorage.getItem('corteInicio');
-    const fin = localStorage.getItem('corteFin');
-
-    if (inicio) {
-        document.getElementById('inputCorteInicio').value = inicio;
+    if (!inicioVal || !finVal) {
+        showToast("Selecciona el rango de fechas", "⚠️");
+        return;
     }
 
-    if (fin) {
-        document.getElementById('inputCorteFin').value = fin;
+    const inicio = new Date(inicioVal + "T00:00:00");
+    const fin = new Date(finVal + "T00:00:00");
+    let totalExtras = 0;
+    
+    // Lista de tareas para buscar en Firestore
+    const tasks = [];
+    let fechaIterador = new Date(inicio);
+
+    // Iteramos día por día desde la fecha inicio hasta la fecha fin
+    while (fechaIterador <= fin) {
+        const y = fechaIterador.getFullYear();
+        const m = String(fechaIterador.getMonth() + 1).padStart(2, '0');
+        const d = String(fechaIterador.getDate()).padStart(2, '0');
+        const stringFechaClave = `${y}-${m}-${d}`;
+
+        // Buscamos directamente en Firestore
+        const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
+        
+        tasks.push(getDoc(docRef).then(docSnap => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                // Solo sumamos si el turno es 'E' (Extra)
+                if (data.texto === 'E') {
+                    totalExtras += obtenerHorasTurno(data.texto, data.horasCustom || "08:00 - 16:00");
+                }
+            }
+        }));
+        
+        fechaIterador.setDate(fechaIterador.getDate() + 1);
     }
 
-    if (inicio && fin) {
-        setTimeout(() => {
-            realizarCalculoManual();
-        }, 500);
-    }
-});
+    // Esperamos a que todas las consultas terminen
+    await Promise.all(tasks);
+
+    // Actualizamos el DOM
+    document.getElementById('displayHorasExtras').textContent = `Horas extras: ${formatearHoras(totalExtras)}`;
+    document.getElementById('periodoSeleccionado').textContent = `Periodo: ${inicio.toLocaleDateString()} al ${fin.toLocaleDateString()}`;
+    
+    // Guardamos en localStorage
+    localStorage.setItem('corteInicio', inicioVal);
+    localStorage.setItem('corteFin', finVal);
+    
+    showToast("Cálculo realizado correctamente", "✅");
+}
     function actualizarHorasPorTurnoSeleccionado() {
     const estado = selectModal.value;
     const esDescanso = estado === 'L';
@@ -1175,6 +1176,37 @@ window.addEventListener('DOMContentLoaded', () => {
             showToast("Error al eliminar el horario.", "⚠️");
         }
     });
+
+   document.getElementById('btnExportarPdf').addEventListener('click', () => {
+    const element = document.querySelector('.calendar-wrapper');
+    
+    // Configuramos para capturar el elemento sin cortes
+    const opt = {
+        margin:       0.2,
+        filename:     `Reporte_Turnos_${document.getElementById('monthYearTitle').textContent}.pdf`,
+        image:        { type: 'jpeg', quality: 1 },
+        // Aumentamos la escala para mejor calidad y usamos un ancho fijo para evitar el corte
+        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    const navButtons = document.querySelectorAll('.nav-btn');
+    navButtons.forEach(btn => btn.style.display = 'none');
+
+    showToast("Generando PDF completo...", "⏳");
+
+    // Forzamos un ajuste temporal en el estilo para asegurar que capture todo
+    element.style.overflow = 'visible';
+    element.style.height = 'auto';
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        // Restauramos los estilos originales
+        element.style.overflow = '';
+        element.style.height = '';
+        navButtons.forEach(btn => btn.style.display = 'flex');
+        showToast("PDF listo", "📥");
+    });
+});
 </script>
 </body>
 </html>
