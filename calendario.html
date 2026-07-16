@@ -722,72 +722,82 @@
         return null;
     }
 
-async function calcularResumenPeriodo() {
-    if (!currentUser) return;
+// --- COPIA ESTO Y REEMPLAZA TU BLOQUE DE SCRIPT ANTERIOR ---
 
-    // 1. Calcular Horas Normales (Esto SÍ cambia con el mes)
-    const año = currentDate.getFullYear();
-    const mes = currentDate.getMonth();
-    const inicioNormal = new Date(año, mes, 1);
+// 1. Mantenemos las funciones de cálculo separadas
+async function calcularHorasNormales(año, mes) {
     const finNormal = new Date(año, mes + 1, 0);
-
     let totalNormales = 0;
-    const tasksNormales = [];
-    
-    // Iteración solo para normales
+    const tasks = [];
+
     for (let d = 1; d <= finNormal.getDate(); d++) {
         const stringFechaClave = `${año}-${String(mes + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
-        tasksNormales.push(getDoc(docRef).then(snap => {
+        tasks.push(getDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave)).then(snap => {
             if (snap.exists() && (snap.data().texto === 'D' || snap.data().texto === 'N')) {
                 totalNormales += obtenerHorasTurno(snap.data().texto, snap.data().horasCustom);
             }
         }));
     }
-    await Promise.all(tasksNormales);
+    await Promise.all(tasks);
     document.getElementById('displayHorasNormales').textContent = formatearHoras(totalNormales);
     document.getElementById('periodoNormales').textContent = `Del 1 al ${finNormal.getDate()} de ${currentDate.toLocaleDateString('es-ES', { month: 'short' })}`;
 }
 
-    async function realizarCalculoManual() {
+async function realizarCalculoManual() {
     const inicioVal = document.getElementById('inputCorteInicio').value;
     const finVal = document.getElementById('inputCorteFin').value;
-    if (!inicioVal || !finVal) {
-        showToast("Selecciona ambas fechas", "⚠️");
-        return;
-    }
+    if (!inicioVal || !finVal) return;
+
+    localStorage.setItem('corteInicio', inicioVal);
+    localStorage.setItem('corteFin', finVal);
 
     const inicio = new Date(inicioVal + "T00:00:00");
     const fin = new Date(finVal + "T00:00:00");
     let totalExtras = 0;
-
-    // Guardamos en localStorage para que persista al refrescar
-    localStorage.setItem('corteInicio', inicioVal);
-    localStorage.setItem('corteFin', finVal);
-
-    // Iteramos por todos los días posibles dentro del rango
-    let fechaIterador = new Date(inicio);
     const tasks = [];
 
+    let fechaIterador = new Date(inicio);
     while (fechaIterador <= fin) {
-        const stringFechaClave = fechaIterador.toISOString().split('T')[0];
-        const docRef = doc(db, "usuarios_4x4", currentUser.uid, "turnos", stringFechaClave);
-        
-        tasks.push(getDoc(docRef).then(snap => {
+        const key = fechaIterador.toISOString().split('T')[0];
+        tasks.push(getDoc(doc(db, "usuarios_4x4", currentUser.uid, "turnos", key)).then(snap => {
             if (snap.exists() && snap.data().texto === 'E') {
                 totalExtras += obtenerHorasTurno(snap.data().texto, snap.data().horasCustom);
             }
         }));
         fechaIterador.setDate(fechaIterador.getDate() + 1);
     }
-
     await Promise.all(tasks);
-
-    // Actualizamos solo el campo de extras
     document.getElementById('displayHorasExtras').textContent = formatearHoras(totalExtras);
     document.getElementById('periodoSeleccionado').textContent = `Del ${inicio.getDate()} al ${fin.getDate()}`;
-    showToast("Cálculo de extras actualizado", "✅");
 }
+
+// 2. Modificamos el renderizado para que llame a las funciones independientes
+async function renderCalendarioCompleto() {
+    if (!currentUser) return;
+
+    // A) Renderizar el grid (esta parte es la que visualiza los días)
+    const grid = document.getElementById('calendarGrid');
+    // ... [MANTEN AQUÍ TODO TU CÓDIGO ACTUAL DE RENDERIZADO DE CELDAS] ...
+    // (Asegúrate de no borrar la lógica que dibuja los cuadritos de los días)
+
+    // B) Actualizar totales
+    await calcularHorasNormales(currentDate.getFullYear(), currentDate.getMonth());
+    
+    // C) Si existen datos de extras, calcularlos para que se vean al cargar
+    if (localStorage.getItem('corteInicio')) {
+        await realizarCalculoManual();
+    }
+}
+
+// 3. Inicialización en el evento DOMContentLoaded
+window.addEventListener('DOMContentLoaded', () => {
+    const inicio = localStorage.getItem('corteInicio');
+    const fin = localStorage.getItem('corteFin');
+    if (inicio) document.getElementById('inputCorteInicio').value = inicio;
+    if (fin) document.getElementById('inputCorteFin').value = fin;
+    
+    // No disparamos el cálculo aquí, lo hará renderCalendarioCompleto tras cargar el usuario
+});
 
     async function renderCalendarioCompleto() {
         if (!currentUser) return;
